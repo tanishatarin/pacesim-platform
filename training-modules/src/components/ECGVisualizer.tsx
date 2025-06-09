@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo} from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -12,9 +12,7 @@ import {
   generateUndersensingPoints,
   generateCaptureModulePoints,
   generateFailureToCapturePoints,
-} from "../components/ecgModes";   
-// import { ModuleStep } from "@/types/module";
-
+} from "../components/ecgModes";
 
 interface ECGVisualizerProps {
   rate?: number;
@@ -50,27 +48,6 @@ const ECGVisualizer = ({
   const [data, setData] = useState<Point[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Define the base complex with physiologically accurate wave morphology
-  const baseComplex = [
-    { x: 0, y: 0 }, // Baseline
-    { x: 1, y: 0.1 }, // P wave start
-    { x: 2, y: 0.25 }, // P wave peak
-    { x: 3, y: 0.1 }, // P wave end
-    { x: 4, y: 0 }, // PR segment
-    { x: 5, y: -0.2 }, // Q wave
-    { x: 6, y: 1.5 }, // R wave peak (normal amplitude around 1.5mV)
-    { x: 7, y: -0.4 }, // S wave
-    { x: 8, y: -0.1 }, // J point
-    { x: 9, y: 0 }, // ST segment
-    { x: 10, y: 0.1 }, // T wave start
-    { x: 11, y: 0.4 }, // T wave peak
-    { x: 12, y: 0.1 }, // T wave end
-    { x: 13, y: 0 }, // Baseline
-    { x: 14, y: 0 }, // Baseline
-    { x: 15, y: 0 }, // Baseline
-  ];
-
-
   // Generate multiple complexes with amplitude adjustments
   const generatePoints = (): Point[] => {
     switch (mode) {
@@ -94,7 +71,6 @@ const ECGVisualizer = ({
           aOutput,
           vOutput,
           sensitivity,
-          
         });
 
       case "failure_to_capture":
@@ -104,79 +80,46 @@ const ECGVisualizer = ({
           vOutput,
           sensitivity,
         });
-        {
-          /**      case "failure_to_sense":
-        return generateFailureToSensePoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-      case "bariatric_capture":
-        return generateBariatricCapturePoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-      case "third_degree_block":
-        return generateThirdDegreeBlockPoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-      case "atrial_fibrilation":
-        return generateAfibPoints({ rate, aOutput, vOutput, sensitivity });
-      case "second_degree_block":
-        return generateSecondDegreeBlockPoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-      case "slow_junctional":
-        return generateSlowJunctionalPoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-      case "asystole":
-        return generateAsystolePoints({ rate, aOutput, vOutput, sensitivity });
+      
       default:
-        return generateNormalPacingPoints({
+        return generateBradycardiaPoints({
           rate,
           aOutput,
           vOutput,
           sensitivity,
-        }); */
-        }
+        });
     }
   };
+
   const points = useMemo(() => 
     generatePoints(), 
     [rate, aOutput, vOutput, sensitivity, mode]
   );
+
   useEffect(() => {
+    // Initialize with first 100 points
     setData(points.slice(0, 100));
-    const speedMultiplier = speedMultipliers[mode] || 1; // fallback = normal speed
-  
-    const updateInterval = (60000 / rate / baseComplex.length) * speedMultiplier;
+    setCurrentIndex(100);
+  }, [points]);
+
+  useEffect(() => {
+    const speedMultiplier = speedMultipliers[mode] || 1;
+    const updateInterval = 50; // Update every 50ms for smooth animation
   
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
         const newIndex = (prevIndex + 1) % points.length;
         setData((prevData) => {
-          const newData = [...prevData.slice(1), points[newIndex]];
+          // Keep last 100 points for display
+          const newData = [...prevData.slice(-99), points[newIndex]];
           return newData;
         });
         return newIndex;
       });
-    }, updateInterval);
+    }, updateInterval * speedMultiplier);
   
     return () => clearInterval(interval);
-  }, [points, rate, mode]);
+  }, [points, mode]);
 
   return (
     <div className="w-full h-64 overflow-hidden bg-black relative rounded-lg">
@@ -200,30 +143,25 @@ const ECGVisualizer = ({
         </svg>
       </div>
 
-
       <div className="absolute inset-0 z-10">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            key={`${rate}-${aOutput}-${vOutput}-${sensitivity}-${mode}`}
             data={data}
             margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
           >
             <XAxis
               dataKey="x"
+              type="number"
+              domain={['dataMin', 'dataMax']}
               tick={false}
               axisLine={false}
               stroke="transparent"
-              allowDataOverflow={true}
-              interval={0}
-              padding={{ left: 0, right: 0 }}
             />
             <YAxis
               domain={[-2, 5]}
               tick={false}
               axisLine={false}
               stroke="transparent"
-              allowDataOverflow={true}
-              padding={{ top: 0, bottom: 0 }}
             />
             <Line
               type="linear"
@@ -237,7 +175,6 @@ const ECGVisualizer = ({
         </ResponsiveContainer>
       </div>
     </div>
-
   );
 };
 
