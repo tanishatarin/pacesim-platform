@@ -1,0 +1,11 @@
+/* src/index.css - Make sure this file contains these Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add some custom styles if needed */
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
