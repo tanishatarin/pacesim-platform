@@ -76,7 +76,27 @@ const Dashboard = () => {
                   <p className="text-sm text-gray-500">Status: {module.status}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{module.score}</p>
+                  {module.score !== '-' ? (
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        ${
+                          module.status === 'In Progress'
+                            ? 'bg-blue-100 text-blue-700'
+                            : parseInt(module.score) >= 85
+                            ? 'bg-green-100 text-green-800'
+                            : parseInt(module.score) >= 70
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-orange-100 text-orange-800'
+                        }
+                      `}
+                    >
+                      {module.score}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
+                      -
+                    </span>
+                  )}
                   <p className="text-sm text-gray-500">Score</p>
                 </div>
               </Link>
@@ -97,55 +117,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
-
-
-
-// import { useNavigate } from 'react-router-dom';
-
-// const Dashboard = () => {
-//   const navigate = useNavigate();
-
-//   const modules = [
-//     { id: 1, title: 'Scenario 1' },
-//     { id: 2, title: 'Scenario 2' },
-//     { id: 3, title: 'Scenario 3' },
-//     { id: 4, title: 'Capture Calibration' },
-//     { id: 5, title: 'Failure to Capture' },
-//   ];
-
-//   return (
-//     <div className="w-full p-8 bg-white shadow-lg rounded-3xl">
-//       {/* Header Section */}
-//       <div className="mb-12">
-//         <h1 className="mb-2 text-3xl font-bold text-black">
-//           Welcome to the Pacemaker Simulator!
-//         </h1>
-//         <p className="text-xl text-gray-900">
-//           External Pacemaker Simulation Platform
-//         </p>
-//       </div>
-
-//       {/* Modules Section */}
-//       <div>
-//         <h2 className="mb-4 text-xl font-semibold">Modules:</h2>
-//         <div className="space-y-3">
-//           {modules.map((module) => (
-//             <div
-//               key={module.id}
-//               className="p-4 bg-[#F0F6FE] hover:bg-blue-100 transition-colors duration-200 rounded-lg cursor-pointer"
-//               onClick={() => navigate(`/module/${module.id}`)}
-//             >
-//               <p className="font-medium text-gray-900">
-//                 Module {module.id}: {module.title}
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Dashboard;

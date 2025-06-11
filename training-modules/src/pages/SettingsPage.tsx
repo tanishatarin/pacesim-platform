@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { Wifi, Volume2, Bell, Moon, Globe } from 'lucide-react';
 import {
   ArrowLeft,
-  Bluetooth,
   HelpCircle,
-  Shield, Monitor
-
+  Shield, Monitor, BookHeart, Wifi
 } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -24,6 +22,8 @@ const SettingsPage = () => {
     }));
   };
 
+    const navigate = useNavigate();
+
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-900 mb-8">Settings</h2>
@@ -36,17 +36,31 @@ const SettingsPage = () => {
             Hardware Connection
           </h3>
 
-          <div className="space-y-4">
-            <div className="  rounded-3xl mb-6 flex items-center justify-between p-4 bg-blue-50 rounded-xl">
+            {/* Pacemaker Device Status */}
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center space-x-3">
+              <BookHeart className="w-5 h-5 text-gray-600" />
               <div>
                 <p className="font-medium text-gray-900">Pacemaker Device</p>
                 <p className="text-sm text-gray-500">Status: {settings.hardwareConnection}</p>
               </div>
-
-               <div className="px-4 py-2 text-blue-700 bg-blue-200 rounded-3xl">
-                status ?? chnages color if connected or not?
-               </div>
             </div>
+            <div
+              className={`px-4 py-2 rounded-3xl font-medium ${
+                settings.hardwareConnection === 'pacemaker'
+                  ? 'bg-green-100 text-green-700'
+                  : settings.hardwareConnection === 'simulated'
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {settings.hardwareConnection === 'pacemaker'
+                ? 'Connected'
+                : settings.hardwareConnection === 'simulated'
+                ? 'Simulated'
+                : 'Disconnected'}
+            </div>
+          </div>
 
 
             {/* Connection Mode */}
@@ -78,10 +92,10 @@ const SettingsPage = () => {
             <div className="text-sm text-gray-600">
               <p>WebSocket URL: ws://raspberrypi.local:5001</p>
               <p>Token: secondary_app_token_456</p>
+              <p>Time Elapsed Since Pacemaker disconnected: "placeholder for now, later show only when disconnected?"</p>
             </div>
           </div>
         </div>
-      </div>
 
 
       {/*  Help & support */}
@@ -100,7 +114,8 @@ const SettingsPage = () => {
             </div>
 
             {/* About PaceSim */}
-            <div className="flex items-center p-4 space-x-3 rounded-lg cursor-pointer hover:bg-gray-50">
+            <div className="flex items-center p-4 space-x-3 rounded-lg cursor-pointer hover:bg-gray-50"
+                onClick={() => navigate('/about')}>
                 <Shield className="w-5 h-5 text-gray-600" />
                 <span className="font-medium">About PaceSim</span>
             </div>
