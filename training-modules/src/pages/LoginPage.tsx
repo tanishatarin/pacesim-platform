@@ -20,7 +20,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     e.preventDefault();
     setError('');
 
-    if (!username || !password || !name) {
+    if (!username || !password) {
       setError('Please fill in all fields');
       return;
     }
@@ -32,7 +32,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     if (!isLogin && (role === '' || institution === '')) {
       // no error bc these fields are optional :)
-      return;
+      if (!username || !name || !password) {
+        setError('Please fill in all required fields');
+        return;
+      }
     }
 
     // TODO: Add actual authentication logic
