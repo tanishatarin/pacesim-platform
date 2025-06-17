@@ -83,22 +83,3 @@ const Layout = ({ onLogout }: LayoutProps) => {
 };
 
 export default Layout;
-
-
-// import { Outlet } from 'react-router-dom';
-
-// interface LayoutProps {
-//   onLogout: () => void;
-// }
-
-// const Layout = ({ onLogout }: LayoutProps) => {
-//   return (
-//     <div className="min-h-screen bg-[#E5EDF8] p-6">
-//       <div className="max-w-4xl mx-auto">
-//         <Outlet />
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Layout;

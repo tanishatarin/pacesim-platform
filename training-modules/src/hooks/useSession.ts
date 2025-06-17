@@ -1,10 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import db from '../lib/db'
 import type { Session, ModuleProgress } from '../lib/db'
 
 export const useSession = (userId: string | undefined) => {
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
+  const autoSaveRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    if (currentSession && userId) {
+      autoSaveRef.current = setInterval(() => {
+        // Update lastActiveAt timestamp
+        const updatedSession = {
+          ...currentSession,
+          lastActiveAt: new Date().toISOString()
+        }
+        
+        // Save to database
+        db.read()
+        const sessionIndex = db.data.sessions.findIndex(s => s.id === currentSession.id)
+        if (sessionIndex >= 0) {
+          db.data.sessions[sessionIndex] = updatedSession
+          db.write()
+          setCurrentSession(updatedSession)
+          console.log('📁 Auto-saved session')
+        }
+      }, 30000) // 30 seconds
+
+      return () => {
+        if (autoSaveRef.current) {
+          clearInterval(autoSaveRef.current)
+        }
+      }
+    }
+  }, [currentSession, userId])
 
   const startSession = (moduleId: string, moduleName: string) => {
     if (!userId) return null
@@ -15,10 +45,17 @@ export const useSession = (userId: string | undefined) => {
       moduleId,
       moduleName,
       startedAt: new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(), // Add this field
       actions: []
     }
     
+    // Save immediately to database
+    db.read()
+    db.data.sessions.push(session)
+    db.write()
+    
     setCurrentSession(session)
+    console.log('🚀 Session started and saved:', session.id)
     return session
   }
 
@@ -28,6 +65,7 @@ export const useSession = (userId: string | undefined) => {
     const completedSession: Session = {
       ...currentSession,
       completedAt: new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(),
       isSuccess,
       score,
       maxScore,
@@ -38,7 +76,10 @@ export const useSession = (userId: string | undefined) => {
 
     // Save session to database
     db.read()
-    db.data.sessions.push(completedSession)
+    const sessionIndex = db.data.sessions.findIndex(s => s.id === currentSession.id)
+    if (sessionIndex >= 0) {
+      db.data.sessions[sessionIndex] = completedSession
+    }
 
     // Update module progress
     const existingProgress = db.data.moduleProgress.find(
@@ -63,6 +104,13 @@ export const useSession = (userId: string | undefined) => {
 
     db.write()
     setCurrentSession(null)
+    
+    // Clear auto-save
+    if (autoSaveRef.current) {
+      clearInterval(autoSaveRef.current)
+    }
+    
+    console.log('✅ Session ended and saved')
   }
 
   const getUserSessions = (): Session[] => {

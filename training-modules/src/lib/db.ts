@@ -5,6 +5,7 @@ export type User = {
   id: string
   name: string
   email: string
+  passwordHash: string 
   createdAt: string
   lastLogin: string
   role?: string
@@ -23,6 +24,7 @@ export type Session = {
   timeSpentSeconds?: number
   isSuccess?: boolean
   actions?: any[]
+  lastActiveAt?: string
 }
 
 export type ModuleProgress = {
