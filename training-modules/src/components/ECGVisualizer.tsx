@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -7,28 +7,23 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
+  generateNormalPacingPoints,
   generateBradycardiaPoints,
   generateOversensingPoints,
   generateUndersensingPoints,
   generateCaptureModulePoints,
   generateFailureToCapturePoints,
-} from "../components/ecgModes";
+} from "@/components/ecgModes";
 
 interface ECGVisualizerProps {
   rate?: number;
   aOutput?: number;
   vOutput?: number;
   sensitivity?: number;
-  mode?:
-  | "sensitivity"
-  | "oversensing"
-  | "undersensing"
-  | "capture_module"
-  | "failure_to_capture";
+  mode?: "sensitivity" | "oversensing" | "undersensing" | "capture_module" | "failure_to_capture";
 }
 
 const speedMultipliers: Record<string, number> = {
-  initial: 1,
   sensitivity: 1,
   oversensing: 1,
   undersensing: 1,
@@ -43,102 +38,68 @@ const ECGVisualizer = ({
   sensitivity = 1,
   mode = "sensitivity",
 }: ECGVisualizerProps) => {
-  type Point = { x: number; y: number };
-
-  const [data, setData] = useState<Point[]>([]);
+  const [data, setData] = useState<{ x: number; y: number }[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const pointsRef = useRef<{ x: number; y: number }[]>([]); // hold stable reference
 
-  // Generate multiple complexes with amplitude adjustments
-  const generatePoints = (): Point[] => {
+  // Only generate points when inputs change
+  const generatedPoints = useMemo(() => {
     switch (mode) {
       case "sensitivity":
-        return generateBradycardiaPoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-
+        return generateBradycardiaPoints({ rate, aOutput, vOutput, sensitivity });
       case "oversensing":
         return generateOversensingPoints();
-
       case "undersensing":
         return generateUndersensingPoints();
-        
       case "capture_module":
-        return generateCaptureModulePoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-
+        return generateCaptureModulePoints({ rate, aOutput, vOutput, sensitivity });
       case "failure_to_capture":
-        return generateFailureToCapturePoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
-      
+        return generateFailureToCapturePoints({ rate, aOutput, vOutput, sensitivity });
       default:
-        return generateBradycardiaPoints({
-          rate,
-          aOutput,
-          vOutput,
-          sensitivity,
-        });
+        return generateNormalPacingPoints({ rate, aOutput, vOutput, sensitivity });
     }
-  };
+  }, [rate, aOutput, vOutput, sensitivity, mode]);
 
-  const points = useMemo(() => 
-    generatePoints(), 
-    [rate, aOutput, vOutput, sensitivity, mode]
-  );
-
+  // Set the ref and reset state whenever the waveform changes
   useEffect(() => {
-    // Initialize with first 100 points
-    setData(points.slice(0, 100));
+    pointsRef.current = generatedPoints;
+    setData(generatedPoints.slice(0, 100));
     setCurrentIndex(100);
-  }, [points]);
+  }, [generatedPoints]);
 
+  // Interval logic for animation
   useEffect(() => {
     const speedMultiplier = speedMultipliers[mode] || 1;
-    const updateInterval = 50; // Update every 50ms for smooth animation
-  
+    const updateInterval = (60000 / rate / 15) * speedMultiplier;
+
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
-        const newIndex = (prevIndex + 1) % points.length;
-        setData((prevData) => {
-          // Keep last 100 points for display
-          const newData = [...prevData.slice(-99), points[newIndex]];
-          return newData;
-        });
+        const newIndex = (prevIndex + 1) % pointsRef.current.length;
+        setData((prevData) => [
+          ...prevData.slice(1),
+          pointsRef.current[newIndex],
+        ]);
         return newIndex;
       });
-    }, updateInterval * speedMultiplier);
-  
+    }, updateInterval);
+
     return () => clearInterval(interval);
-  }, [points, mode]);
+  }, [rate, mode]);
 
   return (
     <div className="w-full h-64 overflow-hidden bg-black relative rounded-lg">
       <div className="absolute inset-0 z-0">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        {/* Red ECG Grid */}
+        <svg width="100%" height="100%">
           <defs>
-            {/* Small 1mm grid */}
             <pattern id="smallGrid" width="4" height="4" patternUnits="userSpaceOnUse">
               <path d="M 4 0 L 0 0 0 4" fill="none" stroke="red" strokeWidth="0.2" opacity="0.3" />
             </pattern>
-
-            {/* Big 5mm grid */}
             <pattern id="bigGrid" width="20" height="20" patternUnits="userSpaceOnUse">
               <rect width="20" height="20" fill="url(#smallGrid)" />
               <path d="M 20 0 L 0 0 0 20" fill="none" stroke="red" strokeWidth="0.8" opacity="0.5" />
             </pattern>
           </defs>
-
-          {/* Fill background */}
           <rect width="100%" height="100%" fill="url(#bigGrid)" />
         </svg>
       </div>
@@ -149,20 +110,8 @@ const ECGVisualizer = ({
             data={data}
             margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
           >
-            <XAxis
-              dataKey="x"
-              type="number"
-              domain={['dataMin', 'dataMax']}
-              tick={false}
-              axisLine={false}
-              stroke="transparent"
-            />
-            <YAxis
-              domain={[-2, 5]}
-              tick={false}
-              axisLine={false}
-              stroke="transparent"
-            />
+            <XAxis dataKey="x" hide />
+            <YAxis domain={[-2, 5]} hide />
             <Line
               type="linear"
               dataKey="y"

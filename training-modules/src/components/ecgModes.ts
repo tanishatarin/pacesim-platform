@@ -1,5 +1,3 @@
-import type { ModuleStep } from "../types/module";
-
 export type Point = { x: number; y: number };
 
 type ECGParams = {
@@ -52,15 +50,12 @@ export const generateNormalPacingPoints = ({
     { x: 41, y: 0 },
     { x: 43, y: 0 },
     { x: 45, y: 0 },
-
     { x: 59, y: 0 },
     { x: 60, y: 0 },
     { x: 65, y: 0 },
     { x: 67, y: 0 },
     { x: 90, y: 0 },
   ];
-  
-  
   
   // Output scaling
   const scaleOutput = (output: number, max = 5) =>
@@ -98,7 +93,7 @@ export const generateBradycardiaPoints = ({
   aOutput,
   vOutput,
   sensitivity,
-}: ECGParams & { currentStep?: ModuleStep | null; currentStepIndex?: number }): Point[] => {
+}: ECGParams): Point[] => {
   const points: Point[] = [];
 
   const baseSpacing = 400; // slower beat spacing
@@ -220,8 +215,6 @@ export const generateOversensingPoints = (): Point[] => {
 
 export const generateUndersensingPoints = (): Point[] => {
   const points: Point[] = [];
-
-
   return points;
 };
 
@@ -298,98 +291,3 @@ const createFlatlineSegment = (length: number, startX: number): Point[] => {
 
   return points;
 };
-
-{
-  /**
-export const generateSecondDegreeBlockPoints = ({
-  rate,
-  aOutput,
-  vOutput,
-}: ECGParams): Point[] => {
-  const points: Point[] = [];
-  const beatLength = 16;
-  const numberOfBeats = 10;
-
-  for (let i = 0; i < numberOfBeats; i++) {
-    const offset = i * beatLength;
-
-    // P wave every beat
-    if (aOutput > 0) {
-      points.push({ x: offset + 2, y: 0.3 * Math.min(1, aOutput / 5) });
-    }
-
-    // Drop every 3rd QRS (simulate conduction failure)
-    const isDropped = i % 3 === 2;
-    if (!isDropped && vOutput > 0) {
-      points.push({ x: offset + 6, y: -0.2 });
-      points.push({ x: offset + 7, y: 1.3 });
-      points.push({ x: offset + 8, y: -0.3 });
-    }
-
-    // Flatline everywhere else
-    for (let j = 0; j < beatLength; j++) {
-      if (![2, 6, 7, 8].includes(j)) {
-        points.push({ x: offset + j, y: 0 });
-      }
-    }
-  }
-
-  return points;
-};
-
-export const generateSlowJunctionalPoints = ({
-  rate,
-  aOutput,
-  vOutput,
-}: ECGParams): Point[] => {
-  const points: Point[] = [];
-  const beatLength = 24;
-  const numberOfBeats = 8;
-
-  for (let i = 0; i < numberOfBeats; i++) {
-    const offset = i * beatLength;
-
-    // Slow QRS only, no P wave
-    if (vOutput > 0) {
-      points.push({ x: offset + 6, y: -0.2 });
-      points.push({ x: offset + 7, y: 1.1 });
-      points.push({ x: offset + 8, y: -0.3 });
-    }
-
-    for (let j = 0; j < beatLength; j++) {
-      if (![6, 7, 8].includes(j)) {
-        points.push({ x: offset + j, y: 0 });
-      }
-    }
-  }
-
-  return points;
-};
-
-export const generateAsystolePoints = ({
-  rate,
-  vOutput,
-}: ECGParams): Point[] => {
-  const points: Point[] = [];
-  const beatLength = 16;
-  const numberOfBeats = 10;
-
-  for (let i = 0; i < numberOfBeats; i++) {
-    const offset = i * beatLength;
-
-    // Optional pacing spike, no QRS
-    if (vOutput > 0) {
-      points.push({ x: offset + 5, y: 4 });
-    }
-
-    for (let j = 0; j < beatLength; j++) {
-      if (j !== 5) {
-        points.push({ x: offset + j, y: 0 });
-      }
-    }
-  }
-
-  return points;
-};
-*/
-}
