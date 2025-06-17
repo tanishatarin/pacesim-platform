@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-interface LoginPageProps {
-  onLogin: () => void;
-}
-
-const LoginPage = ({ onLogin }: LoginPageProps) => {
+const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -14,6 +11,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [institution, setInstitution] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,17 +29,22 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       return;
     }
 
-    if (!isLogin && (role === '' || institution === '')) {
-      // no error bc these fields are optional :)
-      if (!username || !name || !password) {
-        setError('Please fill in all required fields');
-        return;
-      }
+    if (!isLogin && !name) {
+      setError('Please fill in all required fields');
+      return;
     }
 
-    // TODO: Add actual authentication logic
-    onLogin();
-    navigate('/dashboard');
+    try {
+      const loginSuccess = login(username, password);
+      
+      if (loginSuccess) {
+        navigate('/dashboard');
+      } else {
+        setError('Login failed');
+      }
+    } catch (err) {
+      setError('Login failed');
+    }
   };
 
   const toggleMode = () => {
@@ -74,7 +78,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="username" className="block mb-1 text-sm font-medium text-gray-700">
-                Username <span className="text-red-500">*</span>
+                Email/Username <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -82,56 +86,57 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your username"
+                placeholder="Enter your email or username"
               />
             </div>
 
             {!isLogin && (
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="name"
-                type="text"
-                className="w-full p-2 border rounded-md"
-                onChange={(e) => setName(e.target.value)}
-                required={!isLogin}
-                placeholder="Enter your name"
-
-              />
-            </div>
-          )}
+              <div>
+                <label htmlFor="name" className="block mb-1 text-sm font-medium text-gray-700">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your full name"
+                />
+              </div>
+            )}
           
-          {!isLogin && (
-            <div className="space-y-2">
-              <label htmlFor="role" className="text-sm font-medium">
-                Role/Title
-              </label>
-              <input
-                id="role"
-                type="text"
-                className="w-full p-2 border rounded-md"
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="e.g., Cardiac Nurse"
-              />
-            </div>
-          )}
+            {!isLogin && (
+              <div>
+                <label htmlFor="role" className="block mb-1 text-sm font-medium text-gray-700">
+                  Role/Title
+                </label>
+                <input
+                  id="role"
+                  type="text"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Cardiac Nurse"
+                />
+              </div>
+            )}
           
-          {!isLogin && (
-            <div className="space-y-2">
-              <label htmlFor="institution" className="text-sm font-medium">
-                Institution
-              </label>
-              <input
-                id="institution"
-                type="text"
-                className="w-full p-2 border rounded-md"
-                onChange={(e) => setInstitution(e.target.value)}
-                placeholder="e.g., Johns Hopkins Hospital"
-              />
-            </div>
-          )}
+            {!isLogin && (
+              <div>
+                <label htmlFor="institution" className="block mb-1 text-sm font-medium text-gray-700">
+                  Institution
+                </label>
+                <input
+                  id="institution"
+                  type="text"
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Johns Hopkins Hospital"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block mb-1 text-sm font-medium text-gray-700">
@@ -187,6 +192,13 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 : "Already have an account? Sign in"
               }
             </button>
+          </div>
+
+          {/* Demo hint */}
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <p className="text-xs text-center text-gray-600">
+              <strong>Demo:</strong> Use any email/username to create an account or sign in
+            </p>
           </div>
         </div>
         
