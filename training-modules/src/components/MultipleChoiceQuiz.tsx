@@ -113,6 +113,7 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [questionsRevealed, setQuestionsRevealed] = useState<Record<string, boolean>>({});
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [showReviewMode, setShowReviewMode] = useState(false);
 
   const questions = quizData[moduleId] || [];
   const currentQuestion = questions[currentQuestionIndex];
@@ -123,6 +124,7 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
     setSelectedAnswers({});
     setQuestionsRevealed({});
     setQuizCompleted(false);
+    setShowReviewMode(false);
   }, [moduleId]);
 
   if (!currentQuestion) {
@@ -134,8 +136,8 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
   }
 
   const handleAnswerSelect = (answerIndex: number) => {
-    // Only allow selection if this question hasn't been revealed yet
-    if (questionsRevealed[currentQuestion.id]) return;
+    // Only allow selection if this question hasn't been revealed yet (and not in review mode)
+    if (questionsRevealed[currentQuestion.id] && !showReviewMode) return;
     
     setSelectedAnswers(prev => ({
       ...prev,
@@ -160,8 +162,8 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
     if (currentQuestionIndex < questions.length - 1) {
       // Move to next question
       setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      // Quiz completed
+    } else if (!quizCompleted) {
+      // Quiz completed for the first time
       completeQuiz();
     }
   };
@@ -181,58 +183,46 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
       }
     });
 
-    const passed = correctAnswers === questions.length; // Must get all correct to pass
+    const passed = correctAnswers >= Math.ceil(questions.length * 0.7); // 70% passing grade
     setQuizCompleted(true);
+    setShowReviewMode(true);
     onComplete(passed, correctAnswers, questions.length);
   };
 
+
   const selectedAnswer = selectedAnswers[currentQuestion.id];
   const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-  const isRevealed = questionsRevealed[currentQuestion.id];
+  const isRevealed = questionsRevealed[currentQuestion.id] || showReviewMode;
   const isAnswered = selectedAnswer !== undefined;
 
   // Check if all questions have been attempted
   const allQuestionsAttempted = questions.every(q => selectedAnswers[q.id] !== undefined);
 
-  if (quizCompleted) {
-    const score = Object.keys(selectedAnswers).reduce((correct, questionId) => {
-      const question = questions.find(q => q.id === questionId);
-      return correct + (question && selectedAnswers[questionId] === question.correctAnswer ? 1 : 0);
-    }, 0);
+  // Calculate current score
+  const currentScore = Object.keys(selectedAnswers).reduce((correct, questionId) => {
+    const question = questions.find(q => q.id === questionId);
+    return correct + (question && selectedAnswers[questionId] === question.correctAnswer ? 1 : 0);
+  }, 0);
 
-    return (
-      <div className={`bg-white rounded-xl border border-gray-200 p-6 ${className}`}>
-        <div className="text-center">
-          <h3 className="text-xl font-bold mb-4">Quiz Complete!</h3>
-          <div className={`text-6xl mb-4 ${score === questions.length ? 'text-green-500' : 'text-orange-500'}`}>
-            {score === questions.length ? '🎉' : '📚'}
-          </div>
-          <p className="text-lg mb-2">
-            Score: {score}/{questions.length} ({Math.round((score / questions.length) * 100)}%)
-          </p>
-          <p className="text-gray-600 mb-6">
-            {score === questions.length 
-              ? 'Perfect! You can now proceed with the hands-on training.'
-              : 'Review the concepts and try again when ready.'
-            }
-          </p>
-          {score === questions.length && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800 font-medium">
-                ✅ Quiz passed! You can now adjust the pacemaker settings.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const scorePercentage = questions.length > 0 ? Math.round((currentScore / questions.length) * 100) : 0;
 
   return (
     <div className={`bg-white rounded-xl border border-gray-200 p-6 ${className}`}>
-      {/* Header with breadcrumb navigation */}
+      {/* Header with breadcrumb navigation and quiz status */}
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-bold">Knowledge Check</h3>
+        <div className="flex items-center space-x-4">
+          <h3 className="text-lg font-bold">Knowledge Assessment</h3>
+          {quizCompleted && (
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              scorePercentage >= 70 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-orange-100 text-orange-800'
+            }`}>
+              Score: {currentScore}/{questions.length} ({scorePercentage}%)
+            </div>
+          )}
+        </div>
+        
         <div className="flex items-center space-x-2">
           {questions.map((_, index) => (
             <button
@@ -247,6 +237,7 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
                     : 'bg-red-100 text-red-800 border border-red-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-300'
               }`}
+              disabled={!showReviewMode && !questionsRevealed[questions[index].id] && index !== currentQuestionIndex}
             >
               {index + 1}
             </button>
@@ -261,6 +252,16 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
           style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
         />
       </div>
+
+      {/* Review mode indicator */}
+      {showReviewMode && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+          <p className="text-blue-800 text-sm font-medium">
+            📚 Review Mode: You can now navigate through all questions to review your answers. 
+            Use this information to help guide your pacemaker adjustments!
+          </p>
+        </div>
+      )}
 
       {/* Question */}
       <h4 className="text-lg font-medium mb-6">{currentQuestion.question}</h4>
@@ -279,7 +280,7 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
               ? 'border-blue-500 bg-blue-50 text-blue-900'
               : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50';
           } else {
-            // After revealing answer - show results, no interaction
+            // After revealing answer - show results
             if (isSelected && isCorrect) {
               buttonClass += 'border-green-500 bg-green-50 text-green-900';
             } else if (isSelected && !isCorrect) {
@@ -289,14 +290,20 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
             } else {
               buttonClass += 'border-gray-200 bg-gray-50 text-gray-600';
             }
-            buttonClass += ' cursor-default';
+            
+            // Allow re-selection in review mode
+            if (showReviewMode) {
+              buttonClass += ' cursor-pointer hover:opacity-80';
+            } else {
+              buttonClass += ' cursor-default';
+            }
           }
 
           return (
             <button
               key={index}
               onClick={() => handleAnswerSelect(index)}
-              disabled={isRevealed}
+              disabled={isRevealed && !showReviewMode}
               className={buttonClass}
             >
               <div className="flex items-center justify-between">
@@ -318,7 +325,7 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
       {isRevealed && currentQuestion.explanation && (
         <div className={`p-4 rounded-lg mb-6 ${isCorrect ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}>
           <h5 className={`font-medium mb-2 ${isCorrect ? 'text-green-800' : 'text-orange-800'}`}>
-            {isCorrect ? '✅ Correct!' : '❌ Not quite right'}
+            {isCorrect ? '✅ Correct!' : showReviewMode ? 'ℹ️ Explanation:' : '❌ Not quite right'}
           </h5>
           <p className={`text-sm ${isCorrect ? 'text-green-700' : 'text-orange-700'}`}>
             {currentQuestion.explanation}
@@ -338,37 +345,76 @@ const MultipleChoiceQuiz = ({ moduleId, onComplete, className = '' }: MultipleCh
         </button>
         
         <div className="flex space-x-3">
-          {!isRevealed && isAnswered ? (
-            <button
-              onClick={handleSubmitAnswer}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Submit Answer
-            </button>
-          ) : isRevealed ? (
-            currentQuestionIndex < questions.length - 1 ? (
+          
+          
+          {!showReviewMode ? (
+            // Normal quiz flow
+            !isRevealed && isAnswered ? (
+              <button
+                onClick={handleSubmitAnswer}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Submit Answer
+              </button>
+            ) : isRevealed ? (
+              currentQuestionIndex < questions.length - 1 ? (
+                <button
+                  onClick={handleNextQuestion}
+                  className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Next Question
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </button>
+              ) : allQuestionsAttempted ? (
+                <button
+                  onClick={completeQuiz}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Complete Assessment
+                </button>
+              ) : (
+                <div className="text-sm text-gray-600">
+                  Please answer all questions to complete
+                </div>
+              )
+            ) : null
+          ) : (
+            // Review mode - just show next button for navigation
+            currentQuestionIndex < questions.length - 1 && (
               <button
                 onClick={handleNextQuestion}
-                className="inline-flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="inline-flex items-center px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
               >
                 Next Question
                 <ChevronRight className="w-4 h-4 ml-1" />
               </button>
-            ) : allQuestionsAttempted ? (
-              <button
-                onClick={completeQuiz}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Complete Quiz
-              </button>
-            ) : (
-              <div className="text-sm text-gray-600">
-                Please answer all questions to complete the quiz
-              </div>
             )
-          ) : null}
+          )}
         </div>
       </div>
+
+      {/* Final completion message */}
+      {quizCompleted && !showReviewMode && (
+        <div className="mt-6 text-center">
+          <div className={`text-6xl mb-4 ${scorePercentage >= 70 ? 'text-green-500' : 'text-orange-500'}`}>
+            {scorePercentage >= 70 ? '🎉' : '📚'}
+          </div>
+          <p className="text-lg mb-2">
+            Assessment Complete: {currentScore}/{questions.length} ({scorePercentage}%)
+          </p>
+          <p className="text-gray-600 mb-6">
+            {scorePercentage >= 70 
+              ? 'Great job! You can now proceed with the hands-on training.'
+              : 'Review the concepts and use the hands-on training to reinforce your learning.'
+            }
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-800 font-medium">
+              ✅ You can now access the pacemaker controls and use your knowledge to complete the training scenario.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
