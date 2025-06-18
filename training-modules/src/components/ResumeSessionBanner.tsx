@@ -11,13 +11,13 @@ interface ResumeSessionBannerProps {
     lastActiveAt: string;
   };
   onResume: () => void;
-  onDiscard: () => void;
+  onTryAgain?: (success: boolean) => void; 
 }
 
 const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
   session,
   onResume,
-  onDiscard
+  onTryAgain
 }) => {
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date().getTime();
@@ -29,6 +29,12 @@ const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
     if (diffHours < 24) return `${diffHours} hours ago`;
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} days ago`;
+  };
+
+  const handleStartOver = () => {
+    if (onTryAgain) {
+      onTryAgain(false); // End current session and reset everything
+    }
   };
 
   return (
@@ -50,7 +56,7 @@ const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={onDiscard}
+            onClick={handleStartOver} 
             className="text-gray-600 border-gray-300"
           >
             <X className="w-4 h-4 mr-1" />
