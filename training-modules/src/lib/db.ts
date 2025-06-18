@@ -5,11 +5,42 @@ export type User = {
   id: string
   name: string
   email: string
-  passwordHash: string 
+  passwordHash: string
   createdAt: string
   lastLogin: string
   role?: string
   institution?: string
+}
+
+export type QuizState = {
+  currentQuestionIndex: number
+  answers: Array<{
+    questionIndex: number
+    selectedAnswer: number
+    isCorrect: boolean
+    timestamp: string
+  }>
+  isCompleted: boolean
+  score: number
+  totalQuestions: number
+}
+
+export type PracticeState = {
+  parameterChanges: Array<{
+    timestamp: string
+    parameter: string
+    oldValue: number
+    newValue: number
+    reason?: string
+  }>
+  currentParameters: {
+    rate: number
+    aOutput: number
+    vOutput: number
+    aSensitivity: number
+    vSensitivity: number
+  }
+  timeSpentInPractice: number
 }
 
 export type Session = {
@@ -19,12 +50,23 @@ export type Session = {
   moduleName: string
   startedAt: string
   completedAt?: string
-  score?: number
-  maxScore?: number
-  timeSpentSeconds?: number
+  lastActiveAt: string
   isSuccess?: boolean
-  actions?: any[]
-  lastActiveAt?: string
+  
+  // Enhanced tracking
+  currentStep: 'quiz' | 'practice' | 'completed'
+  
+  // Quiz state persistence
+  quizState: QuizState
+  
+  // Practice session state
+  practiceState: PracticeState
+  
+  // Overall metrics
+  totalTimeSpent: number
+  hintsUsed: number
+  errorsCount: number
+  actions: any[] // Keep for backward compatibility
 }
 
 export type ModuleProgress = {
