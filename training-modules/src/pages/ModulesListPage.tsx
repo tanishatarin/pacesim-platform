@@ -1,116 +1,427 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PlayCircle, CheckCircle, Clock } from 'lucide-react';
+import { 
+  PlayCircle, CheckCircle, Clock, Target, Zap, 
+  TrendingUp, Award, RotateCcw, Star, Eye, EyeOff 
+} from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useSession } from '../hooks/useSession';
+import db from '../lib/db';
+import type { ModuleProgress, Session } from '../lib/db';
+
+interface ModuleData {
+  id: number;
+  title: string;
+  description: string;
+  estimatedDuration: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  learningObjectives: string[];
+}
+
+interface ModuleStats {
+  progress?: ModuleProgress;
+  lastSession?: Session;
+  fastestTime?: number;
+  averageScore?: number;
+  totalAttempts: number;
+  recentActivity?: string;
+}
 
 const ModulesListPage = () => {
-  const modules = [
+  const { currentUser } = useAuth();
+  const { sessionHistory } = useSession(currentUser?.id);
+  const [moduleStats, setModuleStats] = useState<{[key: number]: ModuleStats}>({});
+  const [showDescriptions, setShowDescriptions] = useState(false);
+
+  const modules: ModuleData[] = [
     {
       id: 1,
-      title: 'Scenario 1',
-      description: 'Diagnose and correct a failure to sense condition',
-      status: 'completed',
-      score: 92,
-      duration: '15 min'
+      title: 'Scenario 1: Bradycardia Management',
+      description: 'Learn to diagnose and correct failure to sense conditions. Practice with atrial pacing and sensitivity adjustments.',
+      estimatedDuration: '15-20 min',
+      difficulty: 'Beginner', // Note: Ask nurses during user testing
+      learningObjectives: [
+        'Identify bradycardia on ECG',
+        'Adjust pacing rate appropriately',
+        'Set optimal sensitivity thresholds',
+        'Understand atrial pacing modes'
+      ]
     },
     {
       id: 2,
-      title: 'Scenario 2',
-      description: 'Diagnose and correct scenario for notes: failure to capture, oversensing module',
-      status: 'in-progress',
-      score: null,
-      duration: '20 min'
+      title: 'Scenario 2: Oversensing Issues',
+      description: 'Identify and correct oversensing problems that cause inappropriate pacing inhibition.',
+      estimatedDuration: '20-25 min',
+      difficulty: 'Intermediate', // Note: Ask nurses during user testing
+      learningObjectives: [
+        'Recognize oversensing patterns',
+        'Adjust sensitivity to prevent false detection',
+        'Differentiate between sensing issues',
+        'Optimize pacemaker response'
+      ]
     },
     {
       id: 3,
-      title: 'Scenario 3',
-      description: 'Diagnose and correct scenario for notes: failure to sense, undersensing module',
-      status: 'not-started',
-      score: null,
-      duration: '15 min'
+      title: 'Scenario 3: Undersensing Problems',
+      description: 'Correct undersensing issues where the pacemaker fails to detect intrinsic cardiac activity.',
+      estimatedDuration: '15-20 min',
+      difficulty: 'Intermediate', // Note: Ask nurses during user testing
+      learningObjectives: [
+        'Identify undersensing on ECG',
+        'Increase sensitivity appropriately',
+        'Understand sensing thresholds',
+        'Prevent competitive pacing'
+      ]
     },
     {
       id: 4,
-      title: 'Capture Calibration',
-      description: 'Learn to correctly capture',
-      status: 'not-started',
-      score: null,
-      duration: '25 min'
+      title: 'Capture Calibration Module',
+      description: 'Master the techniques for establishing and verifying proper cardiac capture.',
+      estimatedDuration: '25-30 min',
+      difficulty: 'Advanced', // Note: Ask nurses during user testing
+      learningObjectives: [
+        'Perform capture threshold testing',
+        'Optimize output energy levels',
+        'Verify consistent capture',
+        'Balance efficacy and battery life'
+      ]
     },
     {
       id: 5,
       title: 'Failure to Capture',
-      description: 'Correct a failure to capture',
-      status: 'not-started',
-      score: null,
-      duration: '20 min'
+      description: 'Diagnose and correct situations where pacing spikes fail to generate cardiac response.',
+      estimatedDuration: '20-25 min',
+      difficulty: 'Advanced', // Note: Ask nurses during user testing
+      learningObjectives: [
+        'Recognize failure to capture',
+        'Troubleshoot capture issues',
+        'Adjust output appropriately',
+        'Identify lead problems'
+      ]
     }
   ];
 
-  const getStatusIcon = (status: string) => {
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    // Load module progress and calculate stats
+    db.read();
+    const userProgress = db.data?.moduleProgress?.filter(p => p.userId === currentUser.id) || [];
+    const userSessions = db.data?.sessions?.filter(s => s.userId === currentUser.id) || [];
+
+    const stats: {[key: number]: ModuleStats} = {};
+
+    modules.forEach(module => {
+      const moduleId = module.id;
+      const progress = userProgress.find(p => p.moduleId === moduleId.toString());
+      const moduleSessions = userSessions.filter(s => s.moduleId === moduleId.toString());
+      
+      // Get completed sessions for this module
+      const completedSessions = moduleSessions.filter(s => s.completedAt && s.isSuccess);
+      
+      // Calculate fastest time
+      const fastestTime = completedSessions.length > 0 
+        ? Math.min(...completedSessions.map(s => s.totalTimeSpent || Infinity).filter(t => t !== Infinity))
+        : undefined;
+      
+      // Calculate average quiz score
+      const sessionsWithQuiz = completedSessions.filter(s => 
+        s.quizState?.score !== undefined && s.quizState?.totalQuestions
+      );
+      const averageScore = sessionsWithQuiz.length > 0
+        ? sessionsWithQuiz.reduce((sum, s) => sum + (s.quizState!.score / s.quizState!.totalQuestions * 100), 0) / sessionsWithQuiz.length
+        : undefined;
+
+      // Get most recent session
+      const lastSession = moduleSessions.length > 0
+        ? moduleSessions.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0]
+        : undefined;
+
+      // Recent activity
+      const recentActivity = lastSession 
+        ? new Date(lastSession.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : undefined;
+
+      stats[moduleId] = {
+        progress,
+        lastSession,
+        fastestTime: fastestTime !== Infinity ? fastestTime : undefined,
+        averageScore,
+        totalAttempts: moduleSessions.length,
+        recentActivity
+      };
+    });
+
+    setModuleStats(stats);
+  }, [currentUser?.id, sessionHistory]);
+
+  const getStatusIcon = (moduleId: number) => {
+    const stats = moduleStats[moduleId];
+    const status = stats?.progress?.status;
+
     switch (status) {
       case 'completed':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'in-progress':
+      case 'in_progress':
         return <Clock className="w-5 h-5 text-yellow-500" />;
       default:
         return <PlayCircle className="w-5 h-5 text-gray-400" />;
     }
   };
 
-  const getStatusBadge = (status: string, score: number | null) => {
+  const getStatusBadge = (moduleId: number) => {
+    const stats = moduleStats[moduleId];
+    const status = stats?.progress?.status;
+    const bestScore = stats?.progress?.bestScore;
+
     switch (status) {
       case 'completed':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            Completed {score && `- ${score}%`}
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Completed {bestScore ? `• ${bestScore}%` : ''}
           </span>
         );
-      case 'in-progress':
+      case 'in_progress':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            <Clock className="w-3 h-3 mr-1" />
             In Progress
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <PlayCircle className="w-3 h-3 mr-1" />
             Not Started
           </span>
         );
     }
   };
 
+  const getDifficultyBadge = (difficulty: string) => {
+    const colors = {
+      'Beginner': 'bg-blue-100 text-blue-800',
+      'Intermediate': 'bg-orange-100 text-orange-800',
+      'Advanced': 'bg-red-100 text-red-800'
+    };
+
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colors[difficulty as keyof typeof colors]}`}>
+        {difficulty}
+      </span>
+    );
+  };
+
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+    return `${remainingSeconds}s`;
+  };
+
+  const getRecommendedNext = () => {
+    // Find the next logical module to complete based on progress
+    for (const module of modules) {
+      const stats = moduleStats[module.id];
+      if (!stats?.progress || stats.progress.status !== 'completed') {
+        return module;
+      }
+    }
+    return null;
+  };
+
+  const recommendedNext = getRecommendedNext();
+  const totalCompleted = Object.values(moduleStats).filter(s => s.progress?.status === 'completed').length;
+  const totalAttempts = Object.values(moduleStats).reduce((sum, s) => sum + s.totalAttempts, 0);
+
   return (
     <div>
-      <h2 className="text-3xl font-bold text-gray-900 mb-8">Training Modules</h2>
+      {/* Header with Overall Progress */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-3xl font-bold text-gray-900">Training Modules</h2>
+          
+          <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <div className="flex items-center space-x-1">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>{totalCompleted}/{modules.length} Completed</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+              <span>{totalAttempts} Total Attempts</span>
+            </div>
+            <button
+              onClick={() => setShowDescriptions(!showDescriptions)}
+              className={`flex items-center space-x-1 px-3 py-1 rounded-xl border transition-colors shadow-sm ${
+              showDescriptions
+                ? 'bg-blue-100 text-blue-900 border-blue-200 hover:bg-blue-200 hover:text-blue-900'
+                : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-900'
+              }`}
+              title={showDescriptions ? 'Hide scenario details' : 'Show scenario details'}
+              type="button"
+              tabIndex={0}
+              style={{ boxShadow: 'none' }}
+            >
+              {showDescriptions ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span>{showDescriptions ? 'Hide' : 'Show'} Scenarios</span>
+            </button>
+          </div>
+        </div>
 
-      <div className="grid gap-6">
-        {modules.map((module) => (
-          <Link
-            key={module.id}
-            to={`/module/${module.id}`}
-            className="w-full py- px- bg-white shadow-lg rounded-3xl"
-          >
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <div className="flex items-center h-7">{getStatusIcon(module.status)}</div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900">
-                      Module {module.id}: {module.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">{module.description}</p>
-                    <p className="mt-2 text-sm text-gray-400">
-                      Estimated duration: {module.duration}
-                    </p>
-                  </div>
-                </div>
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${(totalCompleted / modules.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Controls */}
+        <div className="flex items-center justify-between">
+          {/* Recommended Next Module */}
+          {recommendedNext && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <Star className="w-4 h-4 text-blue-600" />
+                <h3 className="font-medium text-blue-900">Recommended Next</h3>
+              </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  {getStatusBadge(module.status, module.score)}
+                  <p className="font-medium text-blue-800">{recommendedNext.title}</p>
+                  <p className="text-sm text-blue-600">Estimated: {recommendedNext.estimatedDuration}</p>
                 </div>
+                <Link
+                  to={`/module/${recommendedNext.id}`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Start Now
+                </Link>
               </div>
             </div>
-          </Link>
-        ))}
+          )}
+        </div>
+      </div>
+
+      {/* Modules Grid */}
+      <div className="grid gap-6">
+        {modules.map((module) => {
+          const stats = moduleStats[module.id];
+          const isCompleted = stats?.progress?.status === 'completed';
+          
+          return (
+            <Link
+              key={module.id}
+              to={`/module/${module.id}`}
+              className="block bg-white shadow-lg rounded-3xl transition-all duration-200 hover:shadow-xl hover:scale-[1.01]"
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start space-x-4 flex-1">
+                    <div className="flex items-center h-7">
+                      {getStatusIcon(module.id)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-medium text-gray-900">
+                          Module {module.id}: {module.title}
+                        </h3>
+                        {getDifficultyBadge(module.difficulty)}
+                      </div>
+                      
+                      {/* Conditional Description */}
+                      {showDescriptions && (
+                        <p className="text-sm text-gray-600 mb-3">{module.description}</p>
+                      )}
+
+                      {/* Learning Objectives - Only show if scenarios are enabled */}
+                      {showDescriptions && (
+                        <div className="mb-3">
+                          <p className="text-xs font-medium text-gray-500 mb-1">
+                            {isCompleted ? 'What you learned:' : 'Learning objectives:'}
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {module.learningObjectives.map((objective, idx) => (
+                              <span key={idx} className="inline-block px-2 py-1 bg-gray-100 text-xs text-gray-700 rounded">
+                                {objective}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Module Stats */}
+                      {stats && stats.totalAttempts > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-600">
+                          <div className="flex items-center space-x-1">
+                            <RotateCcw className="w-3 h-3" />
+                            <span>{stats.totalAttempts} attempt{stats.totalAttempts !== 1 ? 's' : ''}</span>
+                          </div>
+                          {stats.fastestTime && (
+                            <div className="flex items-center space-x-1">
+                              <Zap className="w-3 h-3 text-green-500" />
+                              <span>Best: {formatDuration(stats.fastestTime)}</span>
+                            </div>
+                          )}
+                          {stats.averageScore && (
+                            <div className="flex items-center space-x-1">
+                              <Award className="w-3 h-3 text-yellow-500" />
+                              <span>Avg Quiz: {Math.round(stats.averageScore)}%</span>
+                            </div>
+                          )}
+                          {stats.recentActivity && (
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-3 h-3 text-blue-500" />
+                              <span>Last: {stats.recentActivity}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="ml-4 flex flex-col items-end space-y-2">
+                    {getStatusBadge(module.id)}
+                    <div className="text-xs text-gray-500 text-right">
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{module.estimatedDuration}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Quick Stats Footer */}
+      <div className="mt-8 bg-gray-50 rounded-lg p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div className="text-lg font-bold text-gray-900">{totalCompleted}</div>
+            <div className="text-sm text-gray-500">Modules Completed</div>
+          </div>
+          <div>
+            <div className="text-lg font-bold text-gray-900">{totalAttempts}</div>
+            <div className="text-sm text-gray-500">Total Attempts</div>
+          </div>
+          <div>
+            <div className="text-lg font-bold text-gray-900">
+              {totalCompleted > 0 ? Math.round((totalCompleted / modules.length) * 100) : 0}%
+            </div>
+            <div className="text-sm text-gray-500">Progress</div>
+          </div>
+          <div>
+            <div className="text-lg font-bold text-gray-900">
+              {Object.values(moduleStats).filter(s => s.progress?.status === 'in_progress').length}
+            </div>
+            <div className="text-sm text-gray-500">In Progress</div>
+          </div>
+        </div>
       </div>
     </div>
   );
