@@ -1,16 +1,28 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lightbulb, CheckCircle, XCircle, Wifi, WifiOff } from 'lucide-react';
-import ECGVisualizer from '../components/ECGVisualizer';
-import MultipleChoiceQuiz from '../components/MultipleChoiceQuiz';
-import ResumeSessionBanner from '../components/ResumeSessionBanner';
-import { useAuth } from '../hooks/useAuth';
-import { useSession } from '../hooks/useSession';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Lightbulb,
+  CheckCircle,
+  XCircle,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
+import ECGVisualizer from "../components/ECGVisualizer";
+import MultipleChoiceQuiz from "../components/MultipleChoiceQuiz";
+import ResumeSessionBanner from "../components/ResumeSessionBanner";
+import { useAuth } from "../hooks/useAuth";
+import { useSession } from "../hooks/useSession";
 
 interface ModuleConfig {
   title: string;
   objective: string;
-  mode: "sensitivity" | "oversensing" | "undersensing" | "capture_module" | "failure_to_capture";
+  mode:
+    | "sensitivity"
+    | "oversensing"
+    | "undersensing"
+    | "capture_module"
+    | "failure_to_capture";
   initialParams: {
     rate: number;
     aOutput: number;
@@ -28,42 +40,46 @@ interface ModuleConfig {
 }
 
 // Custom slider component
-const CustomSlider = ({ 
-  label, 
-  value, 
-  onChange, 
+const CustomSlider = ({
+  label,
+  value,
+  onChange,
   type,
-  onParameterChange 
-}: { 
-  label: string; 
-  value: number; 
+  onParameterChange,
+}: {
+  label: string;
+  value: number;
   onChange: (value: number) => void;
-  type: 'aOutput' | 'vOutput' | 'rate' | 'aSensitivity' | 'vSensitivity';
-  onParameterChange: (param: string, oldValue: number, newValue: number) => void;
+  type: "aOutput" | "vOutput" | "rate" | "aSensitivity" | "vSensitivity";
+  onParameterChange: (
+    param: string,
+    oldValue: number,
+    newValue: number,
+  ) => void;
 }) => {
   const getStepSize = (currentValue: number, type: string) => {
     switch (type) {
-      case 'aOutput':
+      case "aOutput":
         if (currentValue <= 0.4) return 0.1;
         if (currentValue <= 1.0) return 0.2;
         if (currentValue <= 5.0) return 0.5;
         return 1.0;
-      case 'vOutput':
+      case "vOutput":
         if (currentValue <= 0.4) return 0.1;
         if (currentValue <= 1.0) return 0.2;
         if (currentValue <= 5.0) return 0.5;
         return 1.0;
-      case 'rate':
+      case "rate":
         if (currentValue <= 50) return 5;
         if (currentValue <= 100) return 2;
         if (currentValue <= 170) return 5;
         return 6;
-      case 'aSensitivity':
+      case "aSensitivity":
         if (currentValue >= 3) return 1;
         if (currentValue >= 2) return 0.5;
         if (currentValue >= 0.8) return 0.2;
         return 0.1;
-      case 'vSensitivity':
+      case "vSensitivity":
         if (currentValue >= 10) return 2;
         if (currentValue >= 3) return 1;
         if (currentValue >= 1) return 0.5;
@@ -75,12 +91,18 @@ const CustomSlider = ({
 
   const getRange = (type: string) => {
     switch (type) {
-      case 'aOutput': return { min: 0.1, max: 20.0 };
-      case 'vOutput': return { min: 0.1, max: 25.0 };
-      case 'rate': return { min: 30, max: 180 };
-      case 'aSensitivity': return { min: 0.4, max: 10 };
-      case 'vSensitivity': return { min: 0.8, max: 20 };
-      default: return { min: 0, max: 100 };
+      case "aOutput":
+        return { min: 0.1, max: 20.0 };
+      case "vOutput":
+        return { min: 0.1, max: 25.0 };
+      case "rate":
+        return { min: 30, max: 180 };
+      case "aSensitivity":
+        return { min: 0.4, max: 10 };
+      case "vSensitivity":
+        return { min: 0.8, max: 20 };
+      default:
+        return { min: 0, max: 100 };
     }
   };
 
@@ -90,28 +112,35 @@ const CustomSlider = ({
   const handleChange = (newValue: number) => {
     const oldValue = value;
     const finalValue = parseFloat(newValue.toFixed(1));
-    
+
     if (Math.abs(oldValue - finalValue) < 0.001) return;
-    
+
     onParameterChange(type, oldValue, finalValue);
     onChange(finalValue);
   };
 
   const getUnit = (type: string) => {
     switch (type) {
-      case 'aOutput':
-      case 'vOutput': return 'mA';
-      case 'rate': return 'BPM';
-      case 'aSensitivity':
-      case 'vSensitivity': return 'mV';
-      default: return '';
+      case "aOutput":
+      case "vOutput":
+        return "mA";
+      case "rate":
+        return "BPM";
+      case "aSensitivity":
+      case "vSensitivity":
+        return "mV";
+      default:
+        return "";
     }
   };
 
   return (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-700">
-        {label}: <span className="font-mono text-blue-600">{value} {getUnit(type)}</span>
+        {label}:{" "}
+        <span className="font-mono text-blue-600">
+          {value} {getUnit(type)}
+        </span>
       </label>
       <div className="flex items-center space-x-3">
         <button
@@ -139,8 +168,12 @@ const CustomSlider = ({
         </button>
       </div>
       <div className="flex justify-between text-xs text-gray-500">
-        <span>{range.min} {getUnit(type)}</span>
-        <span>{range.max} {getUnit(type)}</span>
+        <span>
+          {range.min} {getUnit(type)}
+        </span>
+        <span>
+          {range.max} {getUnit(type)}
+        </span>
       </div>
     </div>
   );
@@ -149,20 +182,20 @@ const CustomSlider = ({
 const ModulePage = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
-  
+
   const { currentUser } = useAuth();
-  const { 
-    startSession, 
-    endSession, 
-    updateSession, 
-    currentSession, 
+  const {
+    startSession,
+    endSession,
+    updateSession,
+    currentSession,
     getIncompleteSession,
-    resumeSession 
+    resumeSession,
   } = useSession(currentUser?.id);
-  
+
   // ✅ SIMPLE FIX: Add reset key for forcing re-render
   const [resetKey, setResetKey] = useState(0);
-  
+
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizPassed, setQuizPassed] = useState(false);
   const [quizScore, setQuizScore] = useState({ score: 0, total: 0 });
@@ -170,69 +203,136 @@ const ModulePage = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [sessionStartTime] = useState(Date.now());
   const [resumeBannerSession, setResumeBannerSession] = useState<any>(null);
-  
+
   const [patientHeartRate] = useState(40);
-  
+
   const [connectionMode, setConnectionMode] = useState(() => {
-    return localStorage.getItem('connectionMode') || 'disconnected';
+    return localStorage.getItem("connectionMode") || "disconnected";
   });
-  
-  const isConnected = connectionMode === 'pacemaker';
-  const isSimulated = connectionMode === 'simulated';
-  
+
+  const isConnected = connectionMode === "pacemaker";
+  const isSimulated = connectionMode === "simulated";
+
   const moduleConfigs: Record<string, ModuleConfig> = {
-    '1': {
-      title: 'Scenario 1: Bradycardia Management',
-      objective: 'Diagnose and correct a failure to sense condition. Complete the knowledge check and then adjust the pacemaker.\n\nScenario: You return to a patient\'s room and observe this ECG pattern. Their heart rate has dropped to 40 BPM and atrial leads are connected.',
-      mode: 'sensitivity',
-      initialParams: { rate: 40, aOutput: 2, vOutput: 3, aSensitivity: 1, vSensitivity: 2 },
-      controlsNeeded: { rate: true, aOutput: true, vOutput: false, aSensitivity: true, vSensitivity: false }
+    "1": {
+      title: "Scenario 1: Bradycardia Management",
+      objective:
+        "Diagnose and correct a failure to sense condition. Complete the knowledge check and then adjust the pacemaker.\n\nScenario: You return to a patient's room and observe this ECG pattern. Their heart rate has dropped to 40 BPM and atrial leads are connected.",
+      mode: "sensitivity",
+      initialParams: {
+        rate: 40,
+        aOutput: 2,
+        vOutput: 3,
+        aSensitivity: 1,
+        vSensitivity: 2,
+      },
+      controlsNeeded: {
+        rate: true,
+        aOutput: true,
+        vOutput: false,
+        aSensitivity: true,
+        vSensitivity: false,
+      },
     },
-    '2': {
-      title: 'Scenario 2: Oversensing Issues',
-      objective: 'Identify and correct oversensing problems that are causing inappropriate pacing inhibition.\n\nScenario: The pacemaker is detecting signals that shouldn\'t inhibit pacing.',
-      mode: 'oversensing',
-      initialParams: { rate: 70, aOutput: 5, vOutput: 5, aSensitivity: 4, vSensitivity: 4 },
-      controlsNeeded: { rate: true, aOutput: true, vOutput: true, aSensitivity: true, vSensitivity: true }
+    "2": {
+      title: "Scenario 2: Oversensing Issues",
+      objective:
+        "Identify and correct oversensing problems that are causing inappropriate pacing inhibition.\n\nScenario: The pacemaker is detecting signals that shouldn't inhibit pacing.",
+      mode: "oversensing",
+      initialParams: {
+        rate: 70,
+        aOutput: 5,
+        vOutput: 5,
+        aSensitivity: 4,
+        vSensitivity: 4,
+      },
+      controlsNeeded: {
+        rate: true,
+        aOutput: true,
+        vOutput: true,
+        aSensitivity: true,
+        vSensitivity: true,
+      },
     },
-    '3': {
-      title: 'Scenario 3: Undersensing Problems',
-      objective: 'Correct undersensing issues where the pacemaker fails to detect intrinsic cardiac activity.\n\nScenario: The pacemaker is not sensing the patient\'s own heartbeats.',
-      mode: 'undersensing',
-      initialParams: { rate: 60, aOutput: 5, vOutput: 5, aSensitivity: 0.5, vSensitivity: 0.8 },
-      controlsNeeded: { rate: true, aOutput: false, vOutput: true, aSensitivity: true, vSensitivity: true }
+    "3": {
+      title: "Scenario 3: Undersensing Problems",
+      objective:
+        "Correct undersensing issues where the pacemaker fails to detect intrinsic cardiac activity.\n\nScenario: The pacemaker is not sensing the patient's own heartbeats.",
+      mode: "undersensing",
+      initialParams: {
+        rate: 60,
+        aOutput: 5,
+        vOutput: 5,
+        aSensitivity: 0.5,
+        vSensitivity: 0.8,
+      },
+      controlsNeeded: {
+        rate: true,
+        aOutput: false,
+        vOutput: true,
+        aSensitivity: true,
+        vSensitivity: true,
+      },
     },
-    '4': {
-      title: 'Capture Calibration Module',
-      objective: 'Learn to establish and verify proper cardiac capture.\n\nScenario: Practice adjusting output levels to achieve consistent capture.',
-      mode: 'capture_module',
-      initialParams: { rate: 80, aOutput: 3, vOutput: 2, aSensitivity: 2, vSensitivity: 2 },
-      controlsNeeded: { rate: true, aOutput: true, vOutput: true, aSensitivity: false, vSensitivity: false }
+    "4": {
+      title: "Capture Calibration Module",
+      objective:
+        "Learn to establish and verify proper cardiac capture.\n\nScenario: Practice adjusting output levels to achieve consistent capture.",
+      mode: "capture_module",
+      initialParams: {
+        rate: 80,
+        aOutput: 3,
+        vOutput: 2,
+        aSensitivity: 2,
+        vSensitivity: 2,
+      },
+      controlsNeeded: {
+        rate: true,
+        aOutput: true,
+        vOutput: true,
+        aSensitivity: false,
+        vSensitivity: false,
+      },
     },
-    '5': {
-      title: 'Failure to Capture',
-      objective: 'Diagnose and correct failure to capture situations.\n\nScenario: Pacing spikes are present but not followed by cardiac depolarization.',
-      mode: 'failure_to_capture',
-      initialParams: { rate: 70, aOutput: 1, vOutput: 1, aSensitivity: 2, vSensitivity: 2 },
-      controlsNeeded: { rate: true, aOutput: true, vOutput: true, aSensitivity: false, vSensitivity: false }
-    }
+    "5": {
+      title: "Failure to Capture",
+      objective:
+        "Diagnose and correct failure to capture situations.\n\nScenario: Pacing spikes are present but not followed by cardiac depolarization.",
+      mode: "failure_to_capture",
+      initialParams: {
+        rate: 70,
+        aOutput: 1,
+        vOutput: 1,
+        aSensitivity: 2,
+        vSensitivity: 2,
+      },
+      controlsNeeded: {
+        rate: true,
+        aOutput: true,
+        vOutput: true,
+        aSensitivity: false,
+        vSensitivity: false,
+      },
+    },
   };
 
   const currentModule = moduleId ? moduleConfigs[moduleId] : undefined;
-  
+
   const [pacemakerParams, setPacemakerParams] = useState(() => {
-    return currentModule?.initialParams || {
-      rate: 60,
-      aOutput: 5,
-      vOutput: 5,
-      aSensitivity: 2,
-      vSensitivity: 2
-    };
+    return (
+      currentModule?.initialParams || {
+        rate: 60,
+        aOutput: 5,
+        vOutput: 5,
+        aSensitivity: 2,
+        vSensitivity: 2,
+      }
+    );
   });
-  
+
   const [sensorStates, setSensorStates] = useState({
     left: false,
-    right: false
+    right: false,
   });
 
   // Simple initialization tracking
@@ -243,17 +343,26 @@ const ModulePage = () => {
     if (!currentUser || !moduleId || initialized.current) return;
 
     const incompleteSession = getIncompleteSession(moduleId);
-    
+
     if (incompleteSession && !currentSession) {
-      if (incompleteSession.currentStep === 'quiz' && !incompleteSession.quizState?.isCompleted) {
+      if (
+        incompleteSession.currentStep === "quiz" &&
+        !incompleteSession.quizState?.isCompleted
+      ) {
         resumeSession(incompleteSession.id);
       } else {
         setResumeBannerSession(incompleteSession);
       }
     }
-    
+
     initialized.current = true;
-  }, [currentUser, moduleId, getIncompleteSession, currentSession?.id, resumeSession]);
+  }, [
+    currentUser,
+    moduleId,
+    getIncompleteSession,
+    currentSession?.id,
+    resumeSession,
+  ]);
 
   // Restore session state
   useEffect(() => {
@@ -261,10 +370,13 @@ const ModulePage = () => {
 
     if (currentSession.quizState.isCompleted && !quizCompleted) {
       setQuizCompleted(true);
-      setQuizPassed(currentSession.quizState.score >= Math.ceil(currentSession.quizState.totalQuestions * 0.7));
+      setQuizPassed(
+        currentSession.quizState.score >=
+          Math.ceil(currentSession.quizState.totalQuestions * 0.7),
+      );
       setQuizScore({
         score: currentSession.quizState.score,
-        total: currentSession.quizState.totalQuestions
+        total: currentSession.quizState.totalQuestions,
       });
     }
 
@@ -278,7 +390,7 @@ const ModulePage = () => {
     if (currentModule && !currentSession) {
       const currentParams = JSON.stringify(pacemakerParams);
       const initialParams = JSON.stringify(currentModule.initialParams);
-      
+
       if (currentParams !== initialParams) {
         setPacemakerParams(currentModule.initialParams);
       }
@@ -289,27 +401,35 @@ const ModulePage = () => {
   useEffect(() => {
     if (!currentModule) return;
 
-    const leftShouldFlash = pacemakerParams.aOutput > 0 && pacemakerParams.aSensitivity > 0;
-    const rightShouldFlash = pacemakerParams.vOutput > 0 && pacemakerParams.vSensitivity > 0;
+    const leftShouldFlash =
+      pacemakerParams.aOutput > 0 && pacemakerParams.aSensitivity > 0;
+    const rightShouldFlash =
+      pacemakerParams.vOutput > 0 && pacemakerParams.vSensitivity > 0;
 
-    setSensorStates(prev => {
+    setSensorStates((prev) => {
       if (prev.left === leftShouldFlash && prev.right === rightShouldFlash) {
         return prev;
       }
       return { left: leftShouldFlash, right: rightShouldFlash };
     });
-  }, [pacemakerParams.aOutput, pacemakerParams.aSensitivity, pacemakerParams.vOutput, pacemakerParams.vSensitivity, currentModule]);
+  }, [
+    pacemakerParams.aOutput,
+    pacemakerParams.aSensitivity,
+    pacemakerParams.vOutput,
+    pacemakerParams.vSensitivity,
+    currentModule,
+  ]);
 
   // Listen for connection mode changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'connectionMode') {
-        setConnectionMode(e.newValue || 'disconnected');
+      if (e.key === "connectionMode") {
+        setConnectionMode(e.newValue || "disconnected");
       }
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Auto-save session data (simplified)
@@ -318,17 +438,20 @@ const ModulePage = () => {
 
     const interval = setInterval(() => {
       if (!currentSession?.id || currentSession.completedAt) return;
-      
+
       try {
         updateSession(currentSession.id, {
           practiceState: {
             ...currentSession.practiceState,
             currentParameters: pacemakerParams,
-            timeSpentInPractice: Math.floor((Date.now() - new Date(currentSession.startedAt).getTime()) / 1000)
-          }
+            timeSpentInPractice: Math.floor(
+              (Date.now() - new Date(currentSession.startedAt).getTime()) /
+                1000,
+            ),
+          },
         });
       } catch (error) {
-        console.error('Auto-save error:', error);
+        console.error("Auto-save error:", error);
       }
     }, 30000); // Increased to 30 seconds to reduce conflicts
 
@@ -339,10 +462,14 @@ const ModulePage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Module Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested module could not be found.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Module Not Found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            The requested module could not be found.
+          </p>
           <button
-            onClick={() => navigate('/modules')}
+            onClick={() => navigate("/modules")}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Return to Modules
@@ -366,89 +493,112 @@ const ModulePage = () => {
     }
   }, [resumeBannerSession, endSession]);
 
-  const handleQuizComplete = useCallback((passed: boolean, score: number, totalQuestions: number) => {
-    setQuizCompleted(true);
-    setQuizPassed(passed);
-    setQuizScore({ score, total: totalQuestions });
-    
-    if (currentSession) {
-      updateSession(currentSession.id, {
-        currentStep: 'practice',
-        quizState: {
-          ...currentSession.quizState,
-          isCompleted: true,
-          score,
-          totalQuestions
-        }
-      });
-    }
-  }, [currentSession, updateSession]);
+  const handleQuizComplete = useCallback(
+    (passed: boolean, score: number, totalQuestions: number) => {
+      setQuizCompleted(true);
+      setQuizPassed(passed);
+      setQuizScore({ score, total: totalQuestions });
 
-  const handleComplete = useCallback((success: boolean) => {
-    if (!currentSession) return;
-
-    const finalScore = success ? Math.round((quizScore.score / quizScore.total) * 100) : 0;
-    
-    setIsSuccess(success);
-    setShowCompletion(true);
-    
-    setTimeout(() => {
-      try {
-        endSession(currentSession.id, success, finalScore, quizScore.total);
-      } catch (error) {
-        console.error('Error ending session:', error);
+      if (currentSession) {
+        updateSession(currentSession.id, {
+          currentStep: "practice",
+          quizState: {
+            ...currentSession.quizState,
+            isCompleted: true,
+            score,
+            totalQuestions,
+          },
+        });
       }
-    }, 100);
-  }, [currentSession, quizScore, endSession]);
+    },
+    [currentSession, updateSession],
+  );
 
-  const handleParameterChange = useCallback((param: string, oldValue: number, newValue: number) => {
-    if (!currentSession || Math.abs(oldValue - newValue) < 0.001) return;
+  const handleComplete = useCallback(
+    (success: boolean) => {
+      if (!currentSession) return;
 
-    const parameterChange = {
-      timestamp: new Date().toISOString(),
-      parameter: param,
-      oldValue,
-      newValue
-    };
+      const finalScore = success
+        ? Math.round((quizScore.score / quizScore.total) * 100)
+        : 0;
 
-    try {
-      updateSession(currentSession.id, {
-        practiceState: {
-          ...currentSession.practiceState,
-          parameterChanges: [...currentSession.practiceState.parameterChanges, parameterChange],
-          currentParameters: { ...currentSession.practiceState.currentParameters, [param]: newValue }
+      setIsSuccess(success);
+      setShowCompletion(true);
+
+      setTimeout(() => {
+        try {
+          endSession(currentSession.id, success, finalScore, quizScore.total);
+        } catch (error) {
+          console.error("Error ending session:", error);
         }
-      });
-    } catch (error) {
-      console.error('Error updating session:', error);
-    }
-  }, [currentSession, updateSession]);
+      }, 100);
+    },
+    [currentSession, quizScore, endSession],
+  );
 
-  const handleModuleParameterChange = useCallback((param: string, value: number) => {
-    const oldValue = pacemakerParams[param as keyof typeof pacemakerParams];
-    
-    if (Math.abs(oldValue - value) < 0.001) return;
-    
-    setPacemakerParams(prev => ({
-      ...prev,
-      [param]: value
-    }));
-    
-    if (isConnected) {
-      console.log('Sending to hardware:', { [param]: value });
-    }
-  }, [pacemakerParams, isConnected]);
+  const handleParameterChange = useCallback(
+    (param: string, oldValue: number, newValue: number) => {
+      if (!currentSession || Math.abs(oldValue - newValue) < 0.001) return;
+
+      const parameterChange = {
+        timestamp: new Date().toISOString(),
+        parameter: param,
+        oldValue,
+        newValue,
+      };
+
+      try {
+        updateSession(currentSession.id, {
+          practiceState: {
+            ...currentSession.practiceState,
+            parameterChanges: [
+              ...currentSession.practiceState.parameterChanges,
+              parameterChange,
+            ],
+            currentParameters: {
+              ...currentSession.practiceState.currentParameters,
+              [param]: newValue,
+            },
+          },
+        });
+      } catch (error) {
+        console.error("Error updating session:", error);
+      }
+    },
+    [currentSession, updateSession],
+  );
+
+  const handleModuleParameterChange = useCallback(
+    (param: string, value: number) => {
+      const oldValue = pacemakerParams[param as keyof typeof pacemakerParams];
+
+      if (Math.abs(oldValue - value) < 0.001) return;
+
+      setPacemakerParams((prev) => ({
+        ...prev,
+        [param]: value,
+      }));
+
+      if (isConnected) {
+        console.log("Sending to hardware:", { [param]: value });
+      }
+    },
+    [pacemakerParams, isConnected],
+  );
 
   const getHint = useCallback(() => {
     const hints: Record<string, string> = {
-      '1': 'Try decreasing the pacing rate first to see the intrinsic rhythm, then adjust sensitivity.',
-      '2': 'Look for inappropriate sensing. Consider decreasing sensitivity or checking for interference.',
-      '3': 'The pacemaker isn\'t seeing the patient\'s beats. Try increasing sensitivity.',
-      '4': 'Gradually increase output until you see consistent capture after each pacing spike.',
-      '5': 'No capture despite pacing spikes. Increase the output or check lead connections.'
+      "1": "Try decreasing the pacing rate first to see the intrinsic rhythm, then adjust sensitivity.",
+      "2": "Look for inappropriate sensing. Consider decreasing sensitivity or checking for interference.",
+      "3": "The pacemaker isn't seeing the patient's beats. Try increasing sensitivity.",
+      "4": "Gradually increase output until you see consistent capture after each pacing spike.",
+      "5": "No capture despite pacing spikes. Increase the output or check lead connections.",
     };
-    
-    return hints[moduleId || ''] || 'Review the ECG pattern and think about what adjustments might help.';
+
+    return (
+      hints[moduleId || ""] ||
+      "Review the ECG pattern and think about what adjustments might help."
+    );
   }, [moduleId]);
 
   // ✅ SIMPLE FIX: Complete reset function
@@ -457,7 +607,7 @@ const ModulePage = () => {
     if (currentSession) {
       endSession(currentSession.id, false, 0, 0);
     }
-    
+
     // Reset all state
     setShowCompletion(false);
     setQuizCompleted(false);
@@ -465,19 +615,19 @@ const ModulePage = () => {
     setQuizScore({ score: 0, total: 0 });
     setResumeBannerSession(null);
     setIsSuccess(false);
-    
+
     // Reset parameters
     if (currentModule) {
       setPacemakerParams(currentModule.initialParams);
     }
-    
+
     setSensorStates({ left: false, right: false });
-    
+
     // Reset initialization
     initialized.current = false;
-    
+
     // ✅ Force complete re-render
-    setResetKey(prev => prev + 1);
+    setResetKey((prev) => prev + 1);
   };
 
   return (
@@ -489,8 +639,11 @@ const ModulePage = () => {
             id: resumeBannerSession.id,
             moduleId: resumeBannerSession.moduleId,
             moduleName: resumeBannerSession.moduleName,
-            currentStep: resumeBannerSession.currentStep === 'quiz' ? 'Knowledge Assessment' : 'Hands-on Practice',
-            lastActiveAt: resumeBannerSession.lastActiveAt
+            currentStep:
+              resumeBannerSession.currentStep === "quiz"
+                ? "Knowledge Assessment"
+                : "Hands-on Practice",
+            lastActiveAt: resumeBannerSession.lastActiveAt,
           }}
           onResume={handleResumeSession}
           onTryAgain={handleTryAgain} // ✅ Pass the handleComplete function
@@ -507,14 +660,21 @@ const ModulePage = () => {
                   <CheckCircle className="w-24 h-24 mb-6 text-green-500" />
                   <h2 className="mb-4 text-3xl font-bold">Module Completed!</h2>
                   <p className="mb-8 text-lg text-gray-600">
-                    Excellent work! You've successfully completed {currentModule.title}.
+                    Excellent work! You've successfully completed{" "}
+                    {currentModule.title}.
                   </p>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                     <p className="text-green-800 text-sm">
-                      <strong>Session Summary:</strong><br />
-                      Quiz Score: {quizScore.score}/{quizScore.total} ({Math.round((quizScore.score / quizScore.total) * 100)}%)<br />
-                      Connection Mode: {connectionMode}<br />
-                      Duration: {Math.floor((Date.now() - sessionStartTime) / 60000)} minutes
+                      <strong>Session Summary:</strong>
+                      <br />
+                      Quiz Score: {quizScore.score}/{quizScore.total} (
+                      {Math.round((quizScore.score / quizScore.total) * 100)}%)
+                      <br />
+                      Connection Mode: {connectionMode}
+                      <br />
+                      Duration:{" "}
+                      {Math.floor((Date.now() - sessionStartTime) / 60000)}{" "}
+                      minutes
                     </p>
                   </div>
                 </>
@@ -523,14 +683,15 @@ const ModulePage = () => {
                   <XCircle className="w-24 h-24 mb-6 text-red-500" />
                   <h2 className="mb-4 text-3xl font-bold">Session Ended</h2>
                   <p className="mb-8 text-lg text-gray-600">
-                    Session ended. You can review your progress and try again anytime.
+                    Session ended. You can review your progress and try again
+                    anytime.
                   </p>
                 </>
               )}
-              
+
               <div className="flex space-x-4">
                 <button
-                  onClick={() => navigate('/modules')}
+                  onClick={() => navigate("/modules")}
                   className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Return to Modules
@@ -555,15 +716,17 @@ const ModulePage = () => {
             <h2 className="text-2xl font-bold leading-tight mb-2">
               Module {moduleId}: {currentModule.title}
             </h2>
-            
+
             {/* Connection Status */}
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              isConnected 
-                ? 'bg-green-100 text-green-800' 
-                : isSimulated
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-yellow-100 text-yellow-800'
-            }`}>
+            <div
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                isConnected
+                  ? "bg-green-100 text-green-800"
+                  : isSimulated
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
               {isConnected ? (
                 <>
                   <Wifi className="w-4 h-4 mr-2" />
@@ -588,14 +751,20 @@ const ModulePage = () => {
                 <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">
                   Session Active • Step: {currentSession.currentStep}
                   {currentSession.practiceState.parameterChanges.length > 0 && (
-                    <> • {currentSession.practiceState.parameterChanges.length} adjustments</>
+                    <>
+                      {" "}
+                      • {
+                        currentSession.practiceState.parameterChanges.length
+                      }{" "}
+                      adjustments
+                    </>
                   )}
                 </span>
               </div>
             )}
           </div>
-          
-          <button 
+
+          <button
             onClick={() => alert(getHint())}
             className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center hover:bg-blue-200 ml-4"
             title="Get a hint"
@@ -610,7 +779,9 @@ const ModulePage = () => {
             {/* Objective */}
             <div className="bg-[#F0F6FE] rounded-xl p-6">
               <h3 className="mb-3 font-bold text-lg">Objective:</h3>
-              <p className="whitespace-pre-line text-gray-700">{currentModule.objective}</p>
+              <p className="whitespace-pre-line text-gray-700">
+                {currentModule.objective}
+              </p>
             </div>
 
             {/* ECG Display */}
@@ -637,13 +808,15 @@ const ModulePage = () => {
                     </span>
                   )}
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {currentModule.controlsNeeded.rate && (
                     <CustomSlider
                       label="Pacemaker Rate"
                       value={pacemakerParams.rate}
-                      onChange={(value) => handleModuleParameterChange('rate', value)}
+                      onChange={(value) =>
+                        handleModuleParameterChange("rate", value)
+                      }
                       type="rate"
                       onParameterChange={handleParameterChange}
                     />
@@ -652,7 +825,9 @@ const ModulePage = () => {
                     <CustomSlider
                       label="Atrial Output"
                       value={pacemakerParams.aOutput}
-                      onChange={(value) => handleModuleParameterChange('aOutput', value)}
+                      onChange={(value) =>
+                        handleModuleParameterChange("aOutput", value)
+                      }
                       type="aOutput"
                       onParameterChange={handleParameterChange}
                     />
@@ -661,7 +836,9 @@ const ModulePage = () => {
                     <CustomSlider
                       label="Ventricular Output"
                       value={pacemakerParams.vOutput}
-                      onChange={(value) => handleModuleParameterChange('vOutput', value)}
+                      onChange={(value) =>
+                        handleModuleParameterChange("vOutput", value)
+                      }
                       type="vOutput"
                       onParameterChange={handleParameterChange}
                     />
@@ -670,7 +847,9 @@ const ModulePage = () => {
                     <CustomSlider
                       label="Atrial Sensitivity"
                       value={pacemakerParams.aSensitivity}
-                      onChange={(value) => handleModuleParameterChange('aSensitivity', value)}
+                      onChange={(value) =>
+                        handleModuleParameterChange("aSensitivity", value)
+                      }
                       type="aSensitivity"
                       onParameterChange={handleParameterChange}
                     />
@@ -679,7 +858,9 @@ const ModulePage = () => {
                     <CustomSlider
                       label="Ventricular Sensitivity"
                       value={pacemakerParams.vSensitivity}
-                      onChange={(value) => handleModuleParameterChange('vSensitivity', value)}
+                      onChange={(value) =>
+                        handleModuleParameterChange("vSensitivity", value)
+                      }
                       type="vSensitivity"
                       onParameterChange={handleParameterChange}
                     />
@@ -699,7 +880,8 @@ const ModulePage = () => {
                   </span>
                 </h3>
                 <p className="text-green-800">
-                  Use the physical pacemaker controls to adjust settings. The ECG above will reflect your changes in real-time.
+                  Use the physical pacemaker controls to adjust settings. The
+                  ECG above will reflect your changes in real-time.
                 </p>
               </div>
             )}
@@ -709,7 +891,7 @@ const ModulePage = () => {
               <h3 className="font-bold text-lg">Knowledge Assessment</h3>
               <MultipleChoiceQuiz
                 key={`quiz-${resetKey}`}
-                moduleId={parseInt(moduleId || '1')}
+                moduleId={parseInt(moduleId || "1")}
                 onComplete={handleQuizComplete}
               />
             </div>
@@ -720,18 +902,32 @@ const ModulePage = () => {
             {/* Session Progress Indicator */}
             {currentSession && (
               <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                <h3 className="mb-3 font-bold text-blue-900">Session Progress</h3>
+                <h3 className="mb-3 font-bold text-blue-900">
+                  Session Progress
+                </h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>Quiz</span>
-                    <span className={quizCompleted ? 'text-green-600' : 'text-gray-500'}>
-                      {quizCompleted ? '✓ Complete' : 'In Progress'}
+                    <span
+                      className={
+                        quizCompleted ? "text-green-600" : "text-gray-500"
+                      }
+                    >
+                      {quizCompleted ? "✓ Complete" : "In Progress"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span>Practice</span>
-                    <span className={currentSession.currentStep === 'practice' ? 'text-blue-600' : 'text-gray-500'}>
-                      {currentSession.currentStep === 'practice' ? 'Active' : 'Not Started'}
+                    <span
+                      className={
+                        currentSession.currentStep === "practice"
+                          ? "text-blue-600"
+                          : "text-gray-500"
+                      }
+                    >
+                      {currentSession.currentStep === "practice"
+                        ? "Active"
+                        : "Not Started"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -743,7 +939,12 @@ const ModulePage = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span>Duration</span>
                     <span className="text-gray-700">
-                      {Math.floor((Date.now() - new Date(currentSession.startedAt).getTime()) / 60000)}m
+                      {Math.floor(
+                        (Date.now() -
+                          new Date(currentSession.startedAt).getTime()) /
+                          60000,
+                      )}
+                      m
                     </span>
                   </div>
                 </div>
@@ -755,20 +956,26 @@ const ModulePage = () => {
               <h3 className="mb-4 font-bold">Sensing Status</h3>
               <div className="flex justify-around">
                 <div className="flex flex-col items-center">
-                  <div className={`w-16 h-16 rounded-full transition-all duration-300 ${
-                    sensorStates.left 
-                      ? 'bg-green-400 animate-pulse shadow-lg shadow-green-400/50' 
-                      : 'bg-gray-300'
-                  }`} />
+                  <div
+                    className={`w-16 h-16 rounded-full transition-all duration-300 ${
+                      sensorStates.left
+                        ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50"
+                        : "bg-gray-300"
+                    }`}
+                  />
                   <span className="mt-2 text-sm text-gray-600">Atrial</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className={`w-16 h-16 rounded-full transition-all duration-300 ${
-                    sensorStates.right 
-                      ? 'bg-blue-400 animate-pulse shadow-lg shadow-blue-400/50' 
-                      : 'bg-gray-300'
-                  }`} />
-                  <span className="mt-2 text-sm text-gray-600">Ventricular</span>
+                  <div
+                    className={`w-16 h-16 rounded-full transition-all duration-300 ${
+                      sensorStates.right
+                        ? "bg-blue-400 animate-pulse shadow-lg shadow-blue-400/50"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="mt-2 text-sm text-gray-600">
+                    Ventricular
+                  </span>
                 </div>
               </div>
             </div>
@@ -777,10 +984,14 @@ const ModulePage = () => {
             <div className="bg-[#F0F6FE] rounded-xl p-4">
               <h3 className="mb-2 font-bold">Patient's Intrinsic HR</h3>
               <div className="text-center">
-                <span className="text-4xl font-mono text-gray-700">{patientHeartRate}</span>
+                <span className="text-4xl font-mono text-gray-700">
+                  {patientHeartRate}
+                </span>
                 <span className="text-lg text-gray-500 ml-1">BPM</span>
               </div>
-              <p className="text-xs text-gray-500 text-center mt-1">Baseline rhythm</p>
+              <p className="text-xs text-gray-500 text-center mt-1">
+                Baseline rhythm
+              </p>
             </div>
 
             <div className="bg-[#F0F6FE] rounded-xl p-4">
@@ -795,22 +1006,26 @@ const ModulePage = () => {
             <div className="bg-[#F0F6FE] rounded-xl p-4">
               <h3 className="mb-2 font-bold">Pacemaker Rate</h3>
               <div className="text-center">
-                <span className="text-4xl font-mono text-gray-700">{pacemakerParams.rate}</span>
+                <span className="text-4xl font-mono text-gray-700">
+                  {pacemakerParams.rate}
+                </span>
                 <span className="text-lg text-gray-500 ml-1">BPM</span>
               </div>
-              <p className="text-xs text-gray-500 text-center mt-1">Device setting</p>
+              <p className="text-xs text-gray-500 text-center mt-1">
+                Device setting
+              </p>
             </div>
 
             {/* Action Buttons */}
             {quizCompleted && (
               <div className="flex flex-col space-y-3">
-                <button 
+                <button
                   onClick={() => handleComplete(false)}
                   className="w-full py-3 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                 >
                   End Session
                 </button>
-                <button 
+                <button
                   onClick={() => handleComplete(true)}
                   className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
@@ -823,8 +1038,8 @@ const ModulePage = () => {
 
         {/* Footer */}
         <div className="mt-8 pt-6 border-t border-gray-200">
-          <button 
-            onClick={() => navigate('/modules')}
+          <button
+            onClick={() => navigate("/modules")}
             className="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />

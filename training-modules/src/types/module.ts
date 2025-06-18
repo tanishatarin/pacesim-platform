@@ -1,21 +1,20 @@
 // import { PacemakerState } from "@/utils/PacemakerWebSocketClient";
 
 // todo fix this later !! !
-// pasted in for now bc dont want to deal with pasTING IN ALLL OF THE FILES SINCE IM REFACTOPRING RN 
+// pasted in for now bc dont want to deal with pasTING IN ALLL OF THE FILES SINCE IM REFACTOPRING RN
 export interface PacemakerState {
-    rate: number;
-    a_output: number;
-    v_output: number;
-    aSensitivity: number;
-    vSensitivity: number;
-    mode: number;
-    isLocked: boolean;
-    isPaused: boolean;
-    pauseTimeLeft: number;
-    batteryLevel: number;
-    lastUpdate: number;
-  }
-  
+  rate: number;
+  a_output: number;
+  v_output: number;
+  aSensitivity: number;
+  vSensitivity: number;
+  mode: number;
+  isLocked: boolean;
+  isPaused: boolean;
+  pauseTimeLeft: number;
+  batteryLevel: number;
+  lastUpdate: number;
+}
 
 export interface SensorState {
   left: boolean;

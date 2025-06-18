@@ -129,13 +129,6 @@
 
 // export default ECGVisualizer;
 
-
-
-
-
-
-
-
 // import { useEffect, useRef, useState, useMemo } from "react";
 // import {
 //   LineChart,
@@ -184,7 +177,7 @@
 //   // Generate points only when inputs actually change
 //   const generatedPoints = useMemo(() => {
 //     console.log('🔄 Regenerating ECG points for:', { mode, rate, aOutput, vOutput, sensitivity });
-    
+
 //     switch (mode) {
 //       case "sensitivity":
 //         return generateBradycardiaPoints({ rate, aOutput, vOutput, sensitivity });
@@ -204,7 +197,7 @@
 //   // Update ref and reset animation when points change
 //   useEffect(() => {
 //     console.log('📊 Updating ECG data, points length:', generatedPoints.length);
-    
+
 //     // Clear existing interval
 //     if (intervalRef.current) {
 //       clearInterval(intervalRef.current);
@@ -213,7 +206,7 @@
 
 //     // Update points reference
 //     pointsRef.current = generatedPoints;
-    
+
 //     // Reset display data
 //     const initialData = generatedPoints.slice(0, 100);
 //     setData(initialData);
@@ -230,13 +223,13 @@
 //       const id = setInterval(() => {
 //         setCurrentIndex((prevIndex) => {
 //           const newIndex = (prevIndex + 1) % pointsRef.current.length;
-          
+
 //           setData((prevData) => {
 //             // Keep last 99 points + add new point
 //             const newData = [...prevData.slice(-99), pointsRef.current[newIndex]];
 //             return newData;
 //           });
-          
+
 //           return newIndex;
 //         });
 //       }, updateInterval);
@@ -287,15 +280,15 @@
 //             data={data}
 //             margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
 //           >
-//             <XAxis 
-//               dataKey="x" 
-//               hide 
+//             <XAxis
+//               dataKey="x"
+//               hide
 //               type="number"
 //               domain={['dataMin', 'dataMax']}
 //             />
-//             <YAxis 
-//               domain={[-2, 5]} 
-//               hide 
+//             <YAxis
+//               domain={[-2, 5]}
+//               hide
 //             />
 //             <Line
 //               type="linear"
@@ -322,22 +315,8 @@
 
 // export default ECGVisualizer;
 
-
-
-
-
-
-
-
-
 import { useEffect, useRef, useState, useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
   generateNormalPacingPoints,
   generateBradycardiaPoints,
@@ -352,7 +331,12 @@ interface ECGVisualizerProps {
   aOutput?: number;
   vOutput?: number;
   sensitivity?: number;
-  mode?: "sensitivity" | "oversensing" | "undersensing" | "capture_module" | "failure_to_capture";
+  mode?:
+    | "sensitivity"
+    | "oversensing"
+    | "undersensing"
+    | "capture_module"
+    | "failure_to_capture";
 }
 
 const speedMultipliers: Record<string, number> = {
@@ -380,22 +364,48 @@ const ECGVisualizer = ({
   const generatedPoints = useMemo(() => {
     // Only log once, even in StrictMode
     if (!isInitializedRef.current) {
-      console.log('🔄 Regenerating ECG points for:', { mode, rate, aOutput, vOutput, sensitivity });
+      console.log("🔄 Regenerating ECG points for:", {
+        mode,
+        rate,
+        aOutput,
+        vOutput,
+        sensitivity,
+      });
     }
-    
+
     switch (mode) {
       case "sensitivity":
-        return generateBradycardiaPoints({ rate, aOutput, vOutput, sensitivity });
+        return generateBradycardiaPoints({
+          rate,
+          aOutput,
+          vOutput,
+          sensitivity,
+        });
       case "oversensing":
         return generateOversensingPoints();
       case "undersensing":
         return generateUndersensingPoints();
       case "capture_module":
-        return generateCaptureModulePoints({ rate, aOutput, vOutput, sensitivity });
+        return generateCaptureModulePoints({
+          rate,
+          aOutput,
+          vOutput,
+          sensitivity,
+        });
       case "failure_to_capture":
-        return generateFailureToCapturePoints({ rate, aOutput, vOutput, sensitivity });
+        return generateFailureToCapturePoints({
+          rate,
+          aOutput,
+          vOutput,
+          sensitivity,
+        });
       default:
-        return generateNormalPacingPoints({ rate, aOutput, vOutput, sensitivity });
+        return generateNormalPacingPoints({
+          rate,
+          aOutput,
+          vOutput,
+          sensitivity,
+        });
     }
   }, [rate, aOutput, vOutput, sensitivity, mode]);
 
@@ -406,8 +416,8 @@ const ECGVisualizer = ({
       return;
     }
 
-    console.log('📊 Updating ECG data, points length:', generatedPoints.length);
-    
+    console.log("📊 Updating ECG data, points length:", generatedPoints.length);
+
     // Clear existing interval first
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -416,7 +426,7 @@ const ECGVisualizer = ({
 
     // Update points reference
     pointsRef.current = generatedPoints;
-    
+
     // Reset display data
     const initialData = generatedPoints.slice(0, 100);
     setData(initialData);
@@ -428,17 +438,24 @@ const ECGVisualizer = ({
       const baseInterval = 150;
       const updateInterval = Math.max(50, baseInterval * speedMultiplier);
 
-      console.log('⏱️  Starting ECG animation, interval:', updateInterval, 'ms');
+      console.log(
+        "⏱️  Starting ECG animation, interval:",
+        updateInterval,
+        "ms",
+      );
 
       const id = setInterval(() => {
         setCurrentIndex((prevIndex) => {
           const newIndex = (prevIndex + 1) % pointsRef.current.length;
-          
+
           setData((prevData) => {
-            const newData = [...prevData.slice(-99), pointsRef.current[newIndex]];
+            const newData = [
+              ...prevData.slice(-99),
+              pointsRef.current[newIndex],
+            ];
             return newData;
           });
-          
+
           return newIndex;
         });
       }, updateInterval);
@@ -473,12 +490,34 @@ const ECGVisualizer = ({
       <div className="absolute inset-0 z-0">
         <svg width="100%" height="100%">
           <defs>
-            <pattern id="smallGrid" width="4" height="4" patternUnits="userSpaceOnUse">
-              <path d="M 4 0 L 0 0 0 4" fill="none" stroke="red" strokeWidth="0.2" opacity="0.3" />
+            <pattern
+              id="smallGrid"
+              width="4"
+              height="4"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 4 0 L 0 0 0 4"
+                fill="none"
+                stroke="red"
+                strokeWidth="0.2"
+                opacity="0.3"
+              />
             </pattern>
-            <pattern id="bigGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <pattern
+              id="bigGrid"
+              width="20"
+              height="20"
+              patternUnits="userSpaceOnUse"
+            >
               <rect width="20" height="20" fill="url(#smallGrid)" />
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="red" strokeWidth="0.8" opacity="0.5" />
+              <path
+                d="M 20 0 L 0 0 0 20"
+                fill="none"
+                stroke="red"
+                strokeWidth="0.8"
+                opacity="0.5"
+              />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#bigGrid)" />
@@ -492,16 +531,13 @@ const ECGVisualizer = ({
             data={data}
             margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
           >
-            <XAxis 
-              dataKey="x" 
-              hide 
+            <XAxis
+              dataKey="x"
+              hide
               type="number"
-              domain={['dataMin', 'dataMax']}
+              domain={["dataMin", "dataMax"]}
             />
-            <YAxis 
-              domain={[-2, 5]} 
-              hide 
-            />
+            <YAxis domain={[-2, 5]} hide />
             <Line
               type="linear"
               dataKey="y"

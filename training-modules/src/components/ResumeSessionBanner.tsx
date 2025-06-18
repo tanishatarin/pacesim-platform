@@ -1,6 +1,6 @@
-import React from 'react';
-import { Play, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Play, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ResumeSessionBannerProps {
   session: {
@@ -11,19 +11,19 @@ interface ResumeSessionBannerProps {
     lastActiveAt: string;
   };
   onResume: () => void;
-  onTryAgain?: (success: boolean) => void; 
+  onTryAgain?: (success: boolean) => void;
 }
 
 const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
   session,
   onResume,
-  onTryAgain
+  onTryAgain,
 }) => {
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date().getTime();
     const then = new Date(timestamp).getTime();
     const diffMinutes = Math.floor((now - then) / (1000 * 60));
-    
+
     if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
     const diffHours = Math.floor(diffMinutes / 60);
     if (diffHours < 24) return `${diffHours} hours ago`;
@@ -47,16 +47,17 @@ const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
               Continue Previous Session
             </h3>
             <p className="text-sm text-blue-700">
-              {session.moduleName} • {session.currentStep} • Last active {formatTimeAgo(session.lastActiveAt)}
+              {session.moduleName} • {session.currentStep} • Last active{" "}
+              {formatTimeAgo(session.lastActiveAt)}
             </p>
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={handleStartOver} 
+            onClick={handleStartOver}
             className="text-gray-600 border-gray-300"
           >
             <X className="w-4 h-4 mr-1" />

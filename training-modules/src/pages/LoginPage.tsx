@@ -12,7 +12,7 @@
 //   const [confirmPassword, setConfirmPassword] = useState('');
 //   const [error, setError] = useState('');
 //   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
 //   const { login, signup, isAuthenticated } = useAuth();
 //   const navigate = useNavigate();
 
@@ -49,7 +49,7 @@
 
 //     try {
 //       let result;
-      
+
 //       if (isLogin) {
 //         // Login mode
 //         console.log('🔐 Attempting login for:', username);
@@ -59,7 +59,7 @@
 //         console.log('📝 Attempting signup for:', username);
 //         result = await signup(username, password, name, role, institution);
 //       }
-      
+
 //       if (result.success) {
 //         console.log('✅ Auth successful, navigating to dashboard...');
 //         // Small delay to ensure state is updated
@@ -100,7 +100,7 @@
 //             External Pacemaker Simulation Platform
 //           </p>
 //         </div>
-        
+
 //         <div className="bg-white px-8 py-6 rounded-2xl shadow-xl">
 //           <h2 className="text-2xl font-bold text-center mb-6">
 //             {isLogin ? 'Sign In' : 'Create Account'}
@@ -138,7 +138,7 @@
 //                 />
 //               </div>
 //             )}
-          
+
 //             {!isLogin && (
 //               <div>
 //                 <label htmlFor="role" className="block mb-1 text-sm font-medium text-gray-700">
@@ -155,7 +155,7 @@
 //                 />
 //               </div>
 //             )}
-          
+
 //             {!isLogin && (
 //               <div>
 //                 <label htmlFor="institution" className="block mb-1 text-sm font-medium text-gray-700">
@@ -216,8 +216,8 @@
 //               disabled={isSubmitting}
 //               className="w-full px-4 py-2 text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-waiting"
 //             >
-//               {isSubmitting 
-//                 ? (isLogin ? 'Signing in...' : 'Creating account...') 
+//               {isSubmitting
+//                 ? (isLogin ? 'Signing in...' : 'Creating account...')
 //                 : (isLogin ? 'Sign In' : 'Create Account')
 //               }
 //             </button>
@@ -243,7 +243,7 @@
 //             </p>
 //           </div>
 //         </div>
-        
+
 //         <p className="mt-8 text-sm text-center text-gray-500">
 //           © {new Date().getFullYear()} PaceSim. All rights reserved.
 //         </p>
@@ -254,38 +254,21 @@
 
 // export default LoginPage;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import { useState } from 'react'; // Remove useEffect import
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useState } from "react"; // Remove useEffect import
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('');
-  const [institution, setInstitution] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const { login, signup } = useAuth(); // Remove isAuthenticated
   const navigate = useNavigate();
 
@@ -299,48 +282,48 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
 
     if (!username || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       setIsSubmitting(false);
       return;
     }
 
     if (!isLogin && password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       setIsSubmitting(false);
       return;
     }
 
     if (!isLogin && !name) {
-      setError('Please fill in all required fields');
+      setError("Please fill in all required fields");
       setIsSubmitting(false);
       return;
     }
 
     try {
       let result;
-      
+
       if (isLogin) {
-        console.log('🔐 Attempting login for:', username);
+        console.log("🔐 Attempting login for:", username);
         result = await login(username, password);
       } else {
-        console.log('📝 Attempting signup for:', username);
+        console.log("📝 Attempting signup for:", username);
         result = await signup(username, password, name, role, institution);
       }
-      
+
       if (result.success) {
-        console.log('✅ Auth successful, navigating to dashboard...');
-        navigate('/dashboard');
+        console.log("✅ Auth successful, navigating to dashboard...");
+        navigate("/dashboard");
       } else {
-        setError(result.error || 'Authentication failed');
-        console.log('❌ Auth failed:', result.error);
+        setError(result.error || "Authentication failed");
+        console.log("❌ Auth failed:", result.error);
       }
     } catch (err) {
-      console.error('Auth error:', err);
-      setError('Something went wrong. Please try again.');
+      console.error("Auth error:", err);
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -349,35 +332,36 @@ const LoginPage = () => {
   // ... rest of your component stays exactly the same
   const toggleMode = () => {
     setIsLogin(!isLogin);
-    setError('');
-    setUsername('');
-    setPassword('');
-    setConfirmPassword('');
-    setName('');
-    setRole('');
-    setInstitution('');
+    setError("");
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
+    setName("");
+    setRole("");
+    setInstitution("");
   };
 
   return (
     <div className="min-h-screen bg-[#E5EDF8] flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold text-gray-800">
-            PaceSim
-          </h1>
+          <h1 className="mb-2 text-3xl font-bold text-gray-800">PaceSim</h1>
           <p className="text-gray-600">
             External Pacemaker Simulation Platform
           </p>
         </div>
-        
+
         <div className="bg-white px-8 py-6 rounded-2xl shadow-xl">
           <h2 className="text-2xl font-bold text-center mb-6">
-            {isLogin ? 'Sign In' : 'Create Account'}
+            {isLogin ? "Sign In" : "Create Account"}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="username" className="block mb-1 text-sm font-medium text-gray-700">
+              <label
+                htmlFor="username"
+                className="block mb-1 text-sm font-medium text-gray-700"
+              >
                 Email/Username <span className="text-red-500">*</span>
               </label>
               <input
@@ -393,7 +377,10 @@ const LoginPage = () => {
 
             {!isLogin && (
               <div>
-                <label htmlFor="name" className="block mb-1 text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="name"
+                  className="block mb-1 text-sm font-medium text-gray-700"
+                >
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -407,10 +394,13 @@ const LoginPage = () => {
                 />
               </div>
             )}
-          
+
             {!isLogin && (
               <div>
-                <label htmlFor="role" className="block mb-1 text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="role"
+                  className="block mb-1 text-sm font-medium text-gray-700"
+                >
                   Role/Title
                 </label>
                 <input
@@ -424,10 +414,13 @@ const LoginPage = () => {
                 />
               </div>
             )}
-          
+
             {!isLogin && (
               <div>
-                <label htmlFor="institution" className="block mb-1 text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="institution"
+                  className="block mb-1 text-sm font-medium text-gray-700"
+                >
                   Institution
                 </label>
                 <input
@@ -443,7 +436,10 @@ const LoginPage = () => {
             )}
 
             <div>
-              <label htmlFor="password" className="block mb-1 text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block mb-1 text-sm font-medium text-gray-700"
+              >
                 Password <span className="text-red-500">*</span>
               </label>
               <input
@@ -459,7 +455,10 @@ const LoginPage = () => {
 
             {!isLogin && (
               <div>
-                <label htmlFor="confirm-password" className="block mb-1 text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="confirm-password"
+                  className="block mb-1 text-sm font-medium text-gray-700"
+                >
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -485,10 +484,13 @@ const LoginPage = () => {
               disabled={isSubmitting}
               className="w-full px-4 py-2 text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting 
-                ? (isLogin ? 'Signing in...' : 'Creating account...') 
-                : (isLogin ? 'Sign In' : 'Create Account')
-              }
+              {isSubmitting
+                ? isLogin
+                  ? "Signing in..."
+                  : "Creating account..."
+                : isLogin
+                  ? "Sign In"
+                  : "Create Account"}
             </button>
           </form>
 
@@ -500,8 +502,7 @@ const LoginPage = () => {
             >
               {isLogin
                 ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"
-              }
+                : "Already have an account? Sign in"}
             </button>
           </div>
 
@@ -511,7 +512,7 @@ const LoginPage = () => {
             </p>
           </div>
         </div>
-        
+
         <p className="mt-8 text-sm text-center text-gray-500">
           © {new Date().getFullYear()} PaceSim. All rights reserved.
         </p>

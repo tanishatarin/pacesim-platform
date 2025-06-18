@@ -1,13 +1,18 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import LoginPage from './pages/LoginPage';
-import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
-import ModulePage from './pages/ModulePage';
-import ModulesListPage from './pages/ModulesListPage';
-import AboutPage from './pages/AboutPage';
-import NotFoundPage from './pages/NotFoundPage';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard";
+import LoginPage from "./pages/LoginPage";
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+import ModulePage from "./pages/ModulePage";
+import ModulesListPage from "./pages/ModulesListPage";
+import AboutPage from "./pages/AboutPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import { useAuth } from "./hooks/useAuth";
 
 function App() {
@@ -29,22 +34,26 @@ function App() {
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
-            isAuthenticated ? 
-              <Navigate to="/dashboard" replace /> : 
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
               <LoginPage />
-          } 
+            )
+          }
         />
 
         {/* Protected routes */}
         <Route
           path="/"
           element={
-            isAuthenticated ? 
-              <Layout onLogout={logout} /> : 
+            isAuthenticated ? (
+              <Layout onLogout={logout} />
+            ) : (
               <Navigate to="/login" replace />
+            )
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />

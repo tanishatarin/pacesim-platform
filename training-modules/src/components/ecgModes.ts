@@ -29,7 +29,7 @@ export const generateNormalPacingPoints = ({
   const baseComplexLength = 16;
   const numberOfComplexes = 6; // Match image length
   const complexSpacing = 200; // Add gap between each beat to reach ~1.8 sec interval
-  
+
   const baseComplex: Point[] = [
     { x: 5, y: 0 },
     { x: 8, y: 0 },
@@ -56,7 +56,7 @@ export const generateNormalPacingPoints = ({
     { x: 67, y: 0 },
     { x: 90, y: 0 },
   ];
-  
+
   // Output scaling
   const scaleOutput = (output: number, max = 5) =>
     Math.min(max, Math.log(output + 1) / Math.log(6));
@@ -177,12 +177,12 @@ export const generateOversensingPoints = (): Point[] => {
   // Define the shape of a normal complex
   const complex: Point[] = [
     { x: 0, y: 0 },
-    { x: 10, y: 0.3 },     // P wave
+    { x: 10, y: 0.3 }, // P wave
     { x: 20, y: 0 },
-    { x: 30, y: -0.2 },    // Q
-    { x: 35, y: 1.2 },     // R
-    { x: 40, y: -0.3 },    // S
-    { x: 50, y: 0.2 },     // T wave
+    { x: 30, y: -0.2 }, // Q
+    { x: 35, y: 1.2 }, // R
+    { x: 40, y: -0.3 }, // S
+    { x: 50, y: 0.2 }, // T wave
     { x: 60, y: 0 },
   ];
 

@@ -1,24 +1,22 @@
-import { Link } from 'react-router-dom';
-import { Home, ArrowLeft, HelpCircle } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Home, ArrowLeft, HelpCircle } from "lucide-react";
 
 const AboutPage = () => {
   return (
     <div className="min-h-screen bg-[#E5EDF8] flex items- justify-center">
       <div className="text-center">
-        
         <div className="flex items-center justify-center space-x-2 p-8">
           <HelpCircle className="w-10 h-10" />
           <h2 className="text-3xl font-semibold text-gray-900">
             About Pacemaker Simulator!
           </h2>
         </div>
+        <p className="text-gray-600 mt-2 p-4">🚧 This page is being built!🚧</p>
         <p className="text-gray-600 mt-2 p-4">
-            🚧 This page is being built!🚧 
+          Come back later to see who built this, what it's form, and how cool it
+          is!!
         </p>
-        <p className="text-gray-600 mt-2 p-4">
-            Come back later to see who built this, what it's form, and how cool it is!! 
-        </p>
-        
+
         <div className="mt-8 flex justify-center space-x-4 p-4 ">
           <Link
             to="/dashboard"
