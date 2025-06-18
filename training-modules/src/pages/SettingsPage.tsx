@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   HelpCircle,
-  Shield, 
-  Monitor, 
-  BookHeart, 
+  Shield,
+  Monitor,
+  BookHeart,
   Wifi,
   Volume2,
   Bell,
   LogOut,
   User,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
     soundEnabled: true,
     notifications: true,
     darkMode: false,
-    language: 'en',
-    hardwareConnection: 'disconnected'
+    language: "en",
+    hardwareConnection: "disconnected",
   });
 
   const { currentUser, logout } = useAuth();
@@ -28,63 +28,65 @@ const SettingsPage = () => {
 
   // Load settings from localStorage on component mount
   useEffect(() => {
-    const savedConnectionMode = localStorage.getItem('connectionMode');
-    const savedSoundEnabled = localStorage.getItem('soundEnabled');
-    const savedNotifications = localStorage.getItem('notifications');
-    
+    const savedConnectionMode = localStorage.getItem("connectionMode");
+    const savedSoundEnabled = localStorage.getItem("soundEnabled");
+    const savedNotifications = localStorage.getItem("notifications");
+
     if (savedConnectionMode) {
-      setSettings(prev => ({
+      setSettings((prev) => ({
         ...prev,
-        hardwareConnection: savedConnectionMode
+        hardwareConnection: savedConnectionMode,
       }));
     }
-    
+
     if (savedSoundEnabled) {
-      setSettings(prev => ({
+      setSettings((prev) => ({
         ...prev,
-        soundEnabled: JSON.parse(savedSoundEnabled)
+        soundEnabled: JSON.parse(savedSoundEnabled),
       }));
     }
-    
+
     if (savedNotifications) {
-      setSettings(prev => ({
+      setSettings((prev) => ({
         ...prev,
-        notifications: JSON.parse(savedNotifications)
+        notifications: JSON.parse(savedNotifications),
       }));
     }
   }, []);
 
   const handleConnectionModeChange = (newMode: string) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      hardwareConnection: newMode
+      hardwareConnection: newMode,
     }));
-    
+
     // Save to localStorage so ModulePage can access it
-    localStorage.setItem('connectionMode', newMode);
-    
+    localStorage.setItem("connectionMode", newMode);
+
     // Trigger storage event for other components
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'connectionMode',
-      newValue: newMode
-    }));
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: "connectionMode",
+        newValue: newMode,
+      }),
+    );
   };
 
   const handleToggle = (setting: keyof typeof settings) => {
     const newValue = !settings[setting];
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      [setting]: newValue
+      [setting]: newValue,
     }));
-    
+
     // Save to localStorage
     localStorage.setItem(setting, JSON.stringify(newValue));
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to log out?')) {
+    if (confirm("Are you sure you want to log out?")) {
       logout();
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -92,9 +94,7 @@ const SettingsPage = () => {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-2 text-3xl font-bold text-black">
-          Settings
-        </h1>
+        <h1 className="mb-2 text-3xl font-bold text-black">Settings</h1>
         <p className="text-xl text-gray-900">
           Configure your PaceSim preferences
         </p>
@@ -183,9 +183,7 @@ const SettingsPage = () => {
             {settings.hardwareConnection === "disconnected" && (
               <div className="flex items-center mt-2">
                 <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
-                <span className="text-gray-600">
-                  No connection established
-                </span>
+                <span className="text-gray-600">No connection established</span>
               </div>
             )}
             {settings.hardwareConnection === "pacemaker" && (
@@ -223,7 +221,9 @@ const SettingsPage = () => {
                 <HelpCircle className="w-5 h-5 text-gray-600" />
                 <div>
                   <span className="font-bold text-gray-900">View Tutorial</span>
-                  <p className="text-sm text-gray-600">Learn how to use PaceSim effectively</p>
+                  <p className="text-sm text-gray-600">
+                    Learn how to use PaceSim effectively
+                  </p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -231,8 +231,8 @@ const SettingsPage = () => {
           </div>
 
           {/* About PaceSim */}
-          <div 
-            onClick={() => navigate('/about')}
+          <div
+            onClick={() => navigate("/about")}
             className="p-4 bg-[#F0F6FE] rounded-xl hover:bg-blue-100 transition-colors cursor-pointer"
           >
             <div className="flex items-center justify-between">
@@ -240,7 +240,9 @@ const SettingsPage = () => {
                 <Shield className="w-5 h-5 text-gray-600" />
                 <div>
                   <span className="font-bold text-gray-900">About PaceSim</span>
-                  <p className="text-sm text-gray-600">Version info and credits</p>
+                  <p className="text-sm text-gray-600">
+                    Version info and credits
+                  </p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
@@ -250,18 +252,37 @@ const SettingsPage = () => {
       </div>
 
       {/* Debug Info (Development only) */}
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV === "development" && (
         <div className="w-full px-8 py-6 bg-white shadow-lg rounded-3xl border-2 border-dashed border-gray-300">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Debug Info</h3>
           <div className="text-sm text-gray-600 space-y-2">
-            <p><strong>Connection Mode:</strong> {settings.hardwareConnection}</p>
-            <p><strong>Sound Enabled:</strong> {settings.soundEnabled ? 'Yes' : 'No'}</p>
-            <p><strong>Notifications:</strong> {settings.notifications ? 'Yes' : 'No'}</p>
-            <p><strong>LocalStorage Keys:</strong></p>
+            <p>
+              <strong>Connection Mode:</strong> {settings.hardwareConnection}
+            </p>
+            <p>
+              <strong>Sound Enabled:</strong>{" "}
+              {settings.soundEnabled ? "Yes" : "No"}
+            </p>
+            <p>
+              <strong>Notifications:</strong>{" "}
+              {settings.notifications ? "Yes" : "No"}
+            </p>
+            <p>
+              <strong>LocalStorage Keys:</strong>
+            </p>
             <ul className="ml-4 list-disc space-y-1">
-              <li>connectionMode: {localStorage.getItem('connectionMode') || 'not set'}</li>
-              <li>soundEnabled: {localStorage.getItem('soundEnabled') || 'not set'}</li>
-              <li>notifications: {localStorage.getItem('notifications') || 'not set'}</li>
+              <li>
+                connectionMode:{" "}
+                {localStorage.getItem("connectionMode") || "not set"}
+              </li>
+              <li>
+                soundEnabled:{" "}
+                {localStorage.getItem("soundEnabled") || "not set"}
+              </li>
+              <li>
+                notifications:{" "}
+                {localStorage.getItem("notifications") || "not set"}
+              </li>
             </ul>
           </div>
         </div>

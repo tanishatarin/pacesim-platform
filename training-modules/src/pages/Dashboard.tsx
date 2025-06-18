@@ -304,7 +304,7 @@ const Dashboard = () => {
       {/* Welcome Header */}
       <div className="mb-4">
         <h1 className="mb-2 text-3xl font-bold text-black">
-          {getGreeting()}, {currentUser?.name?.split(" ")[0] || "Nurse"}! 
+          {getGreeting()}, {currentUser?.name?.split(" ")[0] || "Nurse"}!
         </h1>
         <p className="text-xl text-gray-900">
           Welcome back to your Interactive External Pacemaker Training Platform
