@@ -11,6 +11,8 @@ import {
 import ECGVisualizer from "../components/ECGVisualizer";
 import MultipleChoiceQuiz from "../components/MultipleChoiceQuiz";
 import ResumeSessionBanner from "../components/ResumeSessionBanner";
+import { usePacemakerData } from '../hooks/usePacemakerData';
+import type { PacemakerState } from '../utils/PacemakerWebSocketClient';
 import { useAuth } from "../hooks/useAuth";
 import { useSession } from "../hooks/useSession";
 
@@ -193,7 +195,8 @@ const ModulePage = () => {
     resumeSession,
   } = useSession(currentUser?.id);
 
-  // ✅ SIMPLE FIX: Add reset key for forcing re-render
+  const { state: pacemakerState, isConnected: wsConnected, sendControlUpdate, connect, disconnect } = usePacemakerData();
+
   const [resetKey, setResetKey] = useState(0);
 
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -421,16 +424,24 @@ const ModulePage = () => {
   ]);
 
   // Listen for connection mode changes
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "connectionMode") {
-        setConnectionMode(e.newValue || "disconnected");
-      }
-    };
+  // useEffect(() => {
+  //   const handleStorageChange = (e: StorageEvent) => {
+  //     if (e.key === "connectionMode") {
+  //       setConnectionMode(e.newValue || "disconnected");
+  //     }
+  //   };
 
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+  //   window.addEventListener("storage", handleStorageChange);
+  //   return () => window.removeEventListener("storage", handleStorageChange);
+  // }, []);
+
+  useEffect(() => {
+    const connectionMode = localStorage.getItem('connectionMode');
+    if (connectionMode === 'pacemaker') {
+      connect();
+    }
+  }, [connect]);
+
 
   // Auto-save session data (simplified)
   useEffect(() => {
@@ -568,6 +579,24 @@ const ModulePage = () => {
     [currentSession, updateSession],
   );
 
+  // const handleModuleParameterChange = useCallback(
+  //   (param: string, value: number) => {
+  //     const oldValue = pacemakerParams[param as keyof typeof pacemakerParams];
+
+  //     if (Math.abs(oldValue - value) < 0.001) return;
+
+  //     setPacemakerParams((prev) => ({
+  //       ...prev,
+  //       [param]: value,
+  //     }));
+
+  //     if (isConnected) {
+  //       console.log("Sending to hardware:", { [param]: value });
+  //     }
+  //   },
+  //   [pacemakerParams, isConnected],
+  // );
+
   const handleModuleParameterChange = useCallback(
     (param: string, value: number) => {
       const oldValue = pacemakerParams[param as keyof typeof pacemakerParams];
@@ -579,12 +608,16 @@ const ModulePage = () => {
         [param]: value,
       }));
 
-      if (isConnected) {
-        console.log("Sending to hardware:", { [param]: value });
+      // Send to hardware if connected
+      if (isConnected && wsConnected) {
+        console.log('📤 Sending to hardware:', { [param]: value });
+        sendControlUpdate({ [param]: value } as Partial<PacemakerState>);
       }
     },
-    [pacemakerParams, isConnected],
+    [pacemakerParams, isConnected, wsConnected, sendControlUpdate],
   );
+
+  const isHardwareConnected = isConnected && wsConnected;
 
   const getHint = useCallback(() => {
     const hints: Record<string, string> = {
