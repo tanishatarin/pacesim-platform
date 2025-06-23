@@ -14,6 +14,7 @@ import ModulesListPage from "./pages/ModulesListPage";
 import AboutPage from "./pages/AboutPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { useAuth } from "./hooks/useAuth";
+import DebugPage from "./pages/DebugPage";
 
 function App() {
   const { isAuthenticated, logout, isLoading } = useAuth();
@@ -63,6 +64,7 @@ function App() {
           <Route path="modules" element={<ModulesListPage />} />
           <Route path="module/:moduleId" element={<ModulePage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="debug" element={<DebugPage />} />
         </Route>
 
         {/* 404 page */}

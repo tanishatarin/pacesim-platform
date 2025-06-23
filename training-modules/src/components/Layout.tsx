@@ -57,6 +57,15 @@ const Layout = ({ onLogout }: LayoutProps) => {
                     </Link>
                   );
                 })}
+                {process.env.NODE_ENV === "development" && (
+                  <Link
+                    to="/debug"
+                    className="text-xs text-red-600 hover:text-red-800"
+                    title="Developer Debug Panel"
+                  >
+                    🐛 Debug
+                  </Link>
+                )}
               </nav>
             </div>
 
