@@ -419,6 +419,46 @@ const ModulePage = () => {
     }
   }, [wsConnected, connectionMode]);
 
+  // auto swap back to hardware mode + sends current params to hardware 
+  useEffect(() => {
+    if (wsConnected && connectionMode === "simulated") {
+      console.log("🔌 WebSocket reconnected — switching to pacemaker mode");
+
+      // TODO: If this causes hardware issues, comment out or remove the sendControlUpdate block below
+      // and let hardware send values instead of frontend forcing them
+
+      // Switch UI back to "pacemaker" mode
+      setConnectionMode("pacemaker");
+      localStorage.setItem("connectionMode", "pacemaker");
+
+      // Send current simulation values to hardware to keep in sync
+      const paramMap = {
+        rate: "rate",
+        aOutput: "a_output",
+        vOutput: "v_output",
+        aSensitivity: "aSensitivity",
+        vSensitivity: "vSensitivity",
+      };
+
+      const payload: Record<string, number> = {};
+      for (const key in paramMap) {
+        payload[paramMap[key as keyof typeof paramMap]] =
+          pacemakerParams[key as keyof typeof pacemakerParams];
+      }
+
+      try {
+        sendControlUpdate(payload as any);
+        console.log("🔁 Sent simulated values to hardware:", payload);
+      } catch (error) {
+        console.error("⚠️ Failed to send values to hardware:", error);
+      }
+
+      // Clear fallback values (no longer needed once hardware is reconnected)
+      setFallbackParams(null);
+    }
+  }, [wsConnected, connectionMode, pacemakerParams, sendControlUpdate]);
+
+
   // Display values - prioritize hardware when connected
   const displayRate = isConnected ? pacemakerState?.rate || pacemakerParams.rate : pacemakerParams.rate;
   const displayAOutput = isConnected ? pacemakerState?.a_output || pacemakerParams.aOutput : pacemakerParams.aOutput;
