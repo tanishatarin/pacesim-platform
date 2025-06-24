@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PacemakerWebSocketClient } from '../utils/PacemakerWebSocketClient';
 import type { PacemakerState } from '../utils/PacemakerWebSocketClient';
 
@@ -19,6 +19,9 @@ export const usePacemakerData = (): PacemakerDataHook => {
   const [state, setState] = useState<PacemakerState | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Use ref to track the last state to prevent unnecessary updates
+  const lastStateRef = useRef<PacemakerState | null>(null);
 
   useEffect(() => {
     // Connect to the server immediately (like your original)
@@ -32,15 +35,30 @@ export const usePacemakerData = (): PacemakerDataHook => {
         return;
       }
       
-      // Directly update state (no delays, like original)
-      setState(newState);
-      setErrorMessage(null);
+      // FIXED: Only update if state actually changed to prevent loops
+      const lastState = lastStateRef.current;
+      if (!lastState || 
+          lastState.rate !== newState.rate ||
+          lastState.a_output !== newState.a_output ||
+          lastState.v_output !== newState.v_output ||
+          lastState.aSensitivity !== newState.aSensitivity ||
+          lastState.vSensitivity !== newState.vSensitivity ||
+          lastState.mode !== newState.mode ||
+          lastState.batteryLevel !== newState.batteryLevel) {
+        
+        // State actually changed - update it
+        lastStateRef.current = newState;
+        setState(newState);
+        setErrorMessage(null);
+      }
     });
 
     const connectionUnsubscribe = sharedClient.onConnectionStatus((connected) => {
       setIsConnected(connected);
       if (!connected) {
         setErrorMessage('Disconnected from pacemaker server. Attempting to reconnect...');
+        // Clear last state ref when disconnected
+        lastStateRef.current = null;
       } else {
         setErrorMessage(null);
       }
