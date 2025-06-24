@@ -183,6 +183,8 @@ const CustomSlider = ({
 const ModulePage = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
+  const overrideOnReconnect = useRef(false);
+
 
   const { currentUser } = useAuth();
   const {
@@ -359,6 +361,13 @@ const ModulePage = () => {
         vSensitivity: pacemakerState.vSensitivity,
       };
 
+      // Skip updating params if we just reconnected + pushed values ourselves
+      if (overrideOnReconnect.current) {
+        overrideOnReconnect.current = false; // Reset the flag
+        console.log("🛑 Skipping param overwrite after reconnect — frontend already pushed values.");
+        return;
+      }
+
       // Compare with existing state to prevent unnecessary updates
       setPacemakerParams((prev) => {
         const isSame =
@@ -447,6 +456,7 @@ const ModulePage = () => {
       }
 
       try {
+        overrideOnReconnect.current = true;
         sendControlUpdate(payload as any);
         console.log("🔁 Sent simulated values to hardware:", payload);
       } catch (error) {
