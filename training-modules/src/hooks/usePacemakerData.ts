@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { PacemakerWebSocketClient } from '../utils/PacemakerWebSocketClient';
 import type { PacemakerState } from '../utils/PacemakerWebSocketClient';
 
@@ -12,30 +12,62 @@ interface PacemakerDataHook {
 // Single global client instance
 let globalClient: PacemakerWebSocketClient | null = null;
 let connectionAttempted = false;
-let connectionTimeout: NodeJS.Timeout | null = null;
 
 export const usePacemakerData = (): PacemakerDataHook => {
   const [state, setState] = useState<PacemakerState | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Use refs to avoid recreating functions that cause useEffect loops
   const retryCount = useRef(0);
+  const connectionTimeout = useRef<NodeJS.Timeout | null>(null);
   const maxRetries = 3;
-  const retryDelay = 2000; // 2 seconds
+  const retryDelay = 2000;
 
-  // Auto-initialize and connect on first use
-  useEffect(() => {
-    if (!connectionAttempted) {
-      connectionAttempted = true;
-      console.log('🚀 Auto-initializing WebSocket connection...');
-      
-      // Set connection mode to auto-connecting initially
-      localStorage.setItem('connectionMode', 'auto-connecting');
-      
-      initializeAndConnect();
+  // Stable functions that won't cause useEffect loops
+  const fallbackToSimulation = useCallback(() => {
+    console.log('📱 Falling back to simulation mode');
+    localStorage.setItem('connectionMode', 'simulated');
+    setErrorMessage('Hardware unavailable - using simulation mode');
+    retryCount.current = 0;
+    
+    // Clear any pending timeout
+    if (connectionTimeout.current) {
+      clearTimeout(connectionTimeout.current);
+      connectionTimeout.current = null;
     }
+    
+    // Trigger storage event so ModulePage knows about the change
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: 'connectionMode',
+        newValue: 'simulated',
+      })
+    );
   }, []);
 
-  const initializeAndConnect = () => {
+  const handleDisconnection = useCallback(() => {
+    if (retryCount.current < maxRetries) {
+      retryCount.current++;
+      console.log(`🔄 Connection lost. Retry attempt ${retryCount.current}/${maxRetries} in ${retryDelay/1000}s...`);
+      
+      setErrorMessage(`Connection lost. Retrying... (${retryCount.current}/${maxRetries})`);
+      
+      // Schedule retry
+      connectionTimeout.current = setTimeout(() => {
+        if (globalClient) {
+          globalClient.connect();
+        }
+      }, retryDelay);
+      
+    } else {
+      // Max retries reached - fallback to simulation
+      console.log('❌ Max connection retries reached. Switching to simulation mode.');
+      fallbackToSimulation();
+    }
+  }, [fallbackToSimulation]);
+
+  const initializeAndConnect = useCallback(() => {
     try {
       if (!globalClient) {
         const serverUrl = 'ws://localhost:5001';
@@ -73,9 +105,9 @@ export const usePacemakerData = (): PacemakerDataHook => {
             retryCount.current = 0;
             
             // Clear any pending retry timeout
-            if (connectionTimeout) {
-              clearTimeout(connectionTimeout);
-              connectionTimeout = null;
+            if (connectionTimeout.current) {
+              clearTimeout(connectionTimeout.current);
+              connectionTimeout.current = null;
             }
           } else {
             // Disconnected - handle retry logic
@@ -96,51 +128,22 @@ export const usePacemakerData = (): PacemakerDataHook => {
       setErrorMessage(`Failed to initialize: ${error}`);
       fallbackToSimulation();
     }
-  };
+  }, [handleDisconnection, fallbackToSimulation]);
 
-  const handleDisconnection = () => {
-    if (retryCount.current < maxRetries) {
-      retryCount.current++;
-      console.log(`🔄 Connection lost. Retry attempt ${retryCount.current}/${maxRetries} in ${retryDelay/1000}s...`);
+  // Auto-initialize and connect on first use - NO DEPENDENCIES to avoid loops
+  useEffect(() => {
+    if (!connectionAttempted) {
+      connectionAttempted = true;
+      console.log('🚀 Auto-initializing WebSocket connection...');
       
-      setErrorMessage(`Connection lost. Retrying... (${retryCount.current}/${maxRetries})`);
+      // Set connection mode to auto-connecting initially
+      localStorage.setItem('connectionMode', 'auto-connecting');
       
-      // Schedule retry
-      connectionTimeout = setTimeout(() => {
-        if (globalClient) {
-          globalClient.connect();
-        }
-      }, retryDelay);
-      
-    } else {
-      // Max retries reached - fallback to simulation
-      console.log('❌ Max connection retries reached. Switching to simulation mode.');
-      fallbackToSimulation();
+      initializeAndConnect();
     }
-  };
+  }, []); // EMPTY dependency array - only run once
 
-  const fallbackToSimulation = () => {
-    console.log('📱 Falling back to simulation mode');
-    localStorage.setItem('connectionMode', 'simulated');
-    setErrorMessage('Hardware unavailable - using simulation mode');
-    retryCount.current = 0;
-    
-    // Clear any pending timeout
-    if (connectionTimeout) {
-      clearTimeout(connectionTimeout);
-      connectionTimeout = null;
-    }
-    
-    // Trigger storage event so ModulePage knows about the change
-    window.dispatchEvent(
-      new StorageEvent('storage', {
-        key: 'connectionMode',
-        newValue: 'simulated',
-      })
-    );
-  };
-
-  const sendControlUpdate = (updates: Partial<PacemakerState>) => {
+  const sendControlUpdate = useCallback((updates: Partial<PacemakerState>) => {
     if (!isConnected || !globalClient) {
       console.warn('⚠️ Cannot send update - not connected to server');
       setErrorMessage('Cannot send update - not connected to server');
@@ -155,13 +158,13 @@ export const usePacemakerData = (): PacemakerDataHook => {
       console.error('❌ Error sending control update:', error);
       setErrorMessage(`Error sending update: ${error instanceof Error ? error.message : String(error)}`);
     }
-  };
+  }, [isConnected]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout);
+      if (connectionTimeout.current) {
+        clearTimeout(connectionTimeout.current);
       }
     };
   }, []);
