@@ -351,7 +351,6 @@ const ModulePage = () => {
 
   useEffect(() => {
     if (isConnected && pacemakerState) {
-      // Connected - use live hardware data
       const newParams = {
         rate: pacemakerState.rate,
         aOutput: pacemakerState.a_output,
@@ -359,13 +358,41 @@ const ModulePage = () => {
         aSensitivity: pacemakerState.aSensitivity,
         vSensitivity: pacemakerState.vSensitivity,
       };
-      
-      setPacemakerParams(newParams);
-      setFallbackParams(newParams); // Save for fallback
-      
-    } else if (!isConnected && connectionMode === 'simulated' && lastKnownState && !fallbackParams) {
-      // Just switched to simulation - use last known hardware values
-      console.log('📱 Using last known hardware values for simulation:', lastKnownState);
+
+      // Compare with existing state to prevent unnecessary updates
+      setPacemakerParams((prev) => {
+        const isSame =
+          prev.rate === newParams.rate &&
+          prev.aOutput === newParams.aOutput &&
+          prev.vOutput === newParams.vOutput &&
+          prev.aSensitivity === newParams.aSensitivity &&
+          prev.vSensitivity === newParams.vSensitivity;
+
+        if (isSame) return prev; // no change — avoid render
+
+        return newParams;
+      });
+
+      setFallbackParams((prev) => {
+        const isSame =
+          prev &&
+          prev.rate === newParams.rate &&
+          prev.aOutput === newParams.aOutput &&
+          prev.vOutput === newParams.vOutput &&
+          prev.aSensitivity === newParams.aSensitivity &&
+          prev.vSensitivity === newParams.vSensitivity;
+
+        if (isSame) return prev;
+        return newParams;
+      });
+    }
+    // fallback handling unchanged
+    else if (
+      !isConnected &&
+      connectionMode === "simulated" &&
+      lastKnownState &&
+      !fallbackParams
+    ) {
       const fallbackValues = {
         rate: lastKnownState.rate,
         aOutput: lastKnownState.a_output,
@@ -373,7 +400,7 @@ const ModulePage = () => {
         aSensitivity: lastKnownState.aSensitivity,
         vSensitivity: lastKnownState.vSensitivity,
       };
-      
+
       setPacemakerParams(fallbackValues);
       setFallbackParams(fallbackValues);
     }
