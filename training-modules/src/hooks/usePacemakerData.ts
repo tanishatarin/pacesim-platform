@@ -7,9 +7,10 @@ interface PacemakerDataHook {
   isConnected: boolean;
   errorMessage: string | null;
   sendControlUpdate: (updates: Partial<PacemakerState>) => void;
+  lastKnownState: PacemakerState | null; // Expose last known state
 }
 
-// Single global client instance - matches your original
+// Single global client instance
 const sharedClient = new PacemakerWebSocketClient(
   'ws://localhost:5001',
   'secondary_app_token_456'
@@ -20,14 +21,15 @@ export const usePacemakerData = (): PacemakerDataHook => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Use ref to track the last state to prevent unnecessary updates
+  // Track last state and connection status
   const lastStateRef = useRef<PacemakerState | null>(null);
+  const wasConnectedRef = useRef<boolean>(false);
+  const disconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Connect to the server immediately (like your original)
+    // Connect immediately
     sharedClient.connect();
 
-    // Set up event listeners (like your original)
     const stateUnsubscribe = sharedClient.onStateChange((newState) => {
       // Filter out info messages
       if ((newState as any).type === 'info') {
@@ -35,7 +37,7 @@ export const usePacemakerData = (): PacemakerDataHook => {
         return;
       }
       
-      // FIXED: Only update if state actually changed to prevent loops
+      // Only update if state actually changed
       const lastState = lastStateRef.current;
       if (!lastState || 
           lastState.rate !== newState.rate ||
@@ -46,7 +48,6 @@ export const usePacemakerData = (): PacemakerDataHook => {
           lastState.mode !== newState.mode ||
           lastState.batteryLevel !== newState.batteryLevel) {
         
-        // State actually changed - update it
         lastStateRef.current = newState;
         setState(newState);
         setErrorMessage(null);
@@ -54,23 +55,64 @@ export const usePacemakerData = (): PacemakerDataHook => {
     });
 
     const connectionUnsubscribe = sharedClient.onConnectionStatus((connected) => {
+      const wasConnected = wasConnectedRef.current;
+      wasConnectedRef.current = connected;
+      
       setIsConnected(connected);
-      if (!connected) {
-        setErrorMessage('Disconnected from pacemaker server. Attempting to reconnect...');
-        // Clear last state ref when disconnected
-        lastStateRef.current = null;
-      } else {
+      
+      if (connected) {
+        // Connected - clear any pending fallback
+        if (disconnectTimeoutRef.current) {
+          clearTimeout(disconnectTimeoutRef.current);
+          disconnectTimeoutRef.current = null;
+        }
+        
+        // If we were previously connected and had pacemaker mode, restore it
+        const currentMode = localStorage.getItem('connectionMode');
+        if (wasConnected && currentMode === 'simulated' && lastStateRef.current) {
+          console.log('🔌 Reconnected! Switching back to pacemaker mode');
+          localStorage.setItem('connectionMode', 'pacemaker');
+          // Trigger storage event for ModulePage
+          window.dispatchEvent(
+            new StorageEvent('storage', {
+              key: 'connectionMode',
+              newValue: 'pacemaker',
+            })
+          );
+        }
+        
         setErrorMessage(null);
+      } else {
+        // Disconnected - start fallback timer
+        console.log('🔗 Connection lost, starting fallback timer...');
+        setErrorMessage('Connection lost. Will switch to simulation in 3 seconds...');
+        
+        // Only fallback if we were previously connected (not initial connection failure)
+        if (wasConnected && lastStateRef.current) {
+          disconnectTimeoutRef.current = setTimeout(() => {
+            console.log('📱 Switching to simulation mode with last known values');
+            localStorage.setItem('connectionMode', 'simulated');
+            // Trigger storage event for ModulePage
+            window.dispatchEvent(
+              new StorageEvent('storage', {
+                key: 'connectionMode',
+                newValue: 'simulated',
+              })
+            );
+            setErrorMessage('Using simulation mode with last known values');
+          }, 3000); // 3 second delay before fallback
+        }
       }
     });
 
-    // Clean up on unmount (like your original)
     return () => {
       stateUnsubscribe();
       connectionUnsubscribe();
-      // Don't disconnect the shared client - keep it alive for other components
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current);
+      }
     };
-  }, []); // Only run once like your original
+  }, []);
 
   const sendControlUpdate = (updates: Partial<PacemakerState>) => {
     if (!isConnected) {
@@ -90,6 +132,7 @@ export const usePacemakerData = (): PacemakerDataHook => {
     state,
     isConnected,
     errorMessage,
-    sendControlUpdate
+    sendControlUpdate,
+    lastKnownState: lastStateRef.current // Expose for fallback use
   };
 };

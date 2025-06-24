@@ -194,8 +194,12 @@ const ModulePage = () => {
     resumeSession,
   } = useSession(currentUser?.id);
 
-  // WebSocket connection - original style for smooth performance
-  const { state: pacemakerState, isConnected: wsConnected, sendControlUpdate } = usePacemakerData();
+  const { 
+    state: pacemakerState, 
+    isConnected: wsConnected, 
+    sendControlUpdate,
+    lastKnownState 
+  } = usePacemakerData();
 
   // Reset key for forcing re-render
   const [resetKey, setResetKey] = useState(0);
@@ -343,19 +347,38 @@ const ModulePage = () => {
   // Simple initialization tracking
   const initialized = useRef(false);
 
-  // ORIGINAL STYLE: Direct state sync when connected (smooth, no delays)
+  const [fallbackParams, setFallbackParams] = useState<typeof pacemakerParams | null>(null);
+
   useEffect(() => {
     if (isConnected && pacemakerState) {
-      // Direct assignment like original - immediate updates
-      setPacemakerParams({
+      // Connected - use live hardware data
+      const newParams = {
         rate: pacemakerState.rate,
         aOutput: pacemakerState.a_output,
         vOutput: pacemakerState.v_output,
         aSensitivity: pacemakerState.aSensitivity,
         vSensitivity: pacemakerState.vSensitivity,
-      });
+      };
+      
+      setPacemakerParams(newParams);
+      setFallbackParams(newParams); // Save for fallback
+      
+    } else if (!isConnected && connectionMode === 'simulated' && lastKnownState && !fallbackParams) {
+      // Just switched to simulation - use last known hardware values
+      console.log('📱 Using last known hardware values for simulation:', lastKnownState);
+      const fallbackValues = {
+        rate: lastKnownState.rate,
+        aOutput: lastKnownState.a_output,
+        vOutput: lastKnownState.v_output,
+        aSensitivity: lastKnownState.aSensitivity,
+        vSensitivity: lastKnownState.vSensitivity,
+      };
+      
+      setPacemakerParams(fallbackValues);
+      setFallbackParams(fallbackValues);
     }
-  }, [pacemakerState, isConnected]); // Simple dependencies
+  }, [pacemakerState, isConnected, connectionMode, lastKnownState, fallbackParams]);
+
 
   // Display values - prioritize hardware when connected
   const displayRate = isConnected ? pacemakerState?.rate || pacemakerParams.rate : pacemakerParams.rate;
@@ -406,9 +429,20 @@ const ModulePage = () => {
   // Reset parameters when module changes - ONLY when not connected
   useEffect(() => {
     if (currentModule && !currentSession && !isConnected) {
-      setPacemakerParams(currentModule.initialParams);
+      setPacemakerParams((prev) => {
+        const next = currentModule.initialParams;
+        const unchanged = (
+          prev.rate === next.rate &&
+          prev.aOutput === next.aOutput &&
+          prev.vOutput === next.vOutput &&
+          prev.aSensitivity === next.aSensitivity &&
+          prev.vSensitivity === next.vSensitivity
+        );
+        return unchanged ? prev : next;
+      });
     }
-  }, [moduleId, currentModule?.initialParams, currentSession?.id, isConnected]);
+  }, [moduleId, currentSession?.id, isConnected]);
+
 
   // Update sensor states
   useEffect(() => {
@@ -425,11 +459,18 @@ const ModulePage = () => {
     });
   }, [displayAOutput, displayVOutput, pacemakerParams.aSensitivity, pacemakerParams.vSensitivity]);
 
-  // Simple storage listener - no auto-switching
+  // handles connection mode changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "connectionMode") {
-        setConnectionMode(e.newValue || "simulated");
+        const newMode = e.newValue || "simulated";
+        console.log('🔄 Connection mode changed to:', newMode);
+        setConnectionMode(newMode);
+        
+        // Clear fallback params when switching back to hardware
+        if (newMode === 'pacemaker') {
+          setFallbackParams(null);
+        }
       }
     };
 
@@ -647,17 +688,18 @@ const ModulePage = () => {
   };
 
   const getConnectionStatusDisplay = () => {
-    if (isConnected) {
+    if (isConnected && connectionMode === 'pacemaker') {
       return {
         className: "bg-green-100 text-green-800",
         icon: <Wifi className="w-4 h-4 mr-2" />,
         text: "Hardware Connected"
       };
-    } else if (isSimulated) {
+    } else if (connectionMode === 'simulated') {
+      const usingFallback = fallbackParams !== null;
       return {
-        className: "bg-blue-100 text-blue-800",
+        className: usingFallback ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800",
         icon: <WifiOff className="w-4 h-4 mr-2" />,
-        text: "Simulation Mode"
+        text: usingFallback ? "Simulation (Last HW Values)" : "Simulation Mode"
       };
     } else {
       return {
@@ -814,8 +856,8 @@ const ModulePage = () => {
               />
             </div>
 
-            {/* Hardware Connected - Live Data */}
-            {isConnected && quizCompleted && (
+            {/* hardware Connected - Live Data (UPDATED) */}
+            {isConnected && connectionMode === 'pacemaker' && quizCompleted && (
               <div className="bg-green-50 rounded-xl p-6 border-2 border-green-200">
                 <h3 className="font-bold text-lg mb-3 flex items-center">
                   <span className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></span>
@@ -858,8 +900,88 @@ const ModulePage = () => {
               </div>
             )}
 
-            {/* Simulation Controls */}
-            {isSimulated && quizCompleted && (
+            {/* fallback simulation section */}
+            {connectionMode === 'simulated' && fallbackParams && quizCompleted && (
+              <div className="bg-orange-50 rounded-xl p-6 border-2 border-orange-200">
+                <h3 className="font-bold text-lg mb-3 flex items-center">
+                  <span className="w-3 h-3 bg-orange-500 rounded-full mr-3 animate-pulse"></span>
+                  Simulation Mode - Using Last Hardware Values
+                  <span className="ml-3 text-sm bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
+                    Connection Lost
+                  </span>
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm mb-4">
+                  <div className="bg-white rounded-lg p-2">
+                    <div className="text-gray-500">Rate (Last HW)</div>
+                    <div className="font-mono text-lg">{fallbackParams.rate} BPM</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-2">
+                    <div className="text-gray-500">A Output (Last HW)</div>
+                    <div className="font-mono text-lg">{fallbackParams.aOutput} mA</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-2">
+                    <div className="text-gray-500">V Output (Last HW)</div>
+                    <div className="font-mono text-lg">{fallbackParams.vOutput} mA</div>
+                  </div>
+                </div>
+                
+                {/* Show simulation controls */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {currentModule.controlsNeeded.rate && (
+                    <CustomSlider
+                      label="Pacemaker Rate"
+                      value={pacemakerParams.rate}
+                      onChange={(value) => handleModuleParameterChange("rate", value)}
+                      type="rate"
+                      onParameterChange={handleParameterChange}
+                    />
+                  )}
+                  {currentModule.controlsNeeded.aOutput && (
+                    <CustomSlider
+                      label="Atrial Output"
+                      value={pacemakerParams.aOutput}
+                      onChange={(value) => handleModuleParameterChange("aOutput", value)}
+                      type="aOutput"
+                      onParameterChange={handleParameterChange}
+                    />
+                  )}
+                  {currentModule.controlsNeeded.vOutput && (
+                    <CustomSlider
+                      label="Ventricular Output"
+                      value={pacemakerParams.vOutput}
+                      onChange={(value) => handleModuleParameterChange("vOutput", value)}
+                      type="vOutput"
+                      onParameterChange={handleParameterChange}
+                    />
+                  )}
+                  {currentModule.controlsNeeded.aSensitivity && (
+                    <CustomSlider
+                      label="Atrial Sensitivity"
+                      value={pacemakerParams.aSensitivity}
+                      onChange={(value) => handleModuleParameterChange("aSensitivity", value)}
+                      type="aSensitivity"
+                      onParameterChange={handleParameterChange}
+                    />
+                  )}
+                  {currentModule.controlsNeeded.vSensitivity && (
+                    <CustomSlider
+                      label="Ventricular Sensitivity"
+                      value={pacemakerParams.vSensitivity}
+                      onChange={(value) => handleModuleParameterChange("vSensitivity", value)}
+                      type="vSensitivity"
+                      onParameterChange={handleParameterChange}
+                    />
+                  )}
+                </div>
+                
+                <p className="text-orange-800 mt-3">
+                  ⚠️ Hardware temporarily disconnected. Using simulation with last known values. Will auto-reconnect when available.
+                </p>
+              </div>
+            )}
+
+            {/* Regular Simulation Controls (when manually in simulation mode) */}
+            {connectionMode === 'simulated' && !fallbackParams && quizCompleted && (
               <div className="bg-gray-50 rounded-xl p-6 border-2 border-blue-200">
                 <h3 className="font-bold text-lg mb-6 flex items-center">
                   <span className="w-3 h-3 bg-blue-500 rounded-full mr-3 animate-pulse"></span>
@@ -1057,7 +1179,8 @@ const ModulePage = () => {
                 <span className="text-lg text-gray-500 ml-1">BPM</span>
               </div>
               <p className="text-xs text-gray-500 text-center mt-1">
-                {isConnected ? 'Live from device' : 'Device setting'}
+                {isConnected && connectionMode === 'pacemaker' ? 'Live from device' : 
+                 fallbackParams ? 'Last known value' : 'Device setting'}
               </p>
             </div>
 
