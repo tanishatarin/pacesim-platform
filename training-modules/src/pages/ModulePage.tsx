@@ -415,18 +415,18 @@ const ModulePage = () => {
     }
   }, [pacemakerState, isConnected, connectionMode, lastKnownState, fallbackParams]);
 
-  useEffect(() => {
-    // Auto-recover connection mode to hardware when WebSocket reconnects
-    if (wsConnected && connectionMode === "simulated") {
-      console.log("🔌 WebSocket reconnected — switching back to pacemaker mode");
+  // useEffect(() => {
+  //   // Auto-recover connection mode to hardware when WebSocket reconnects
+  //   if (wsConnected && connectionMode === "simulated") {
+  //     console.log("🔌 WebSocket reconnected — switching back to pacemaker mode");
 
-      setConnectionMode("pacemaker");
-      localStorage.setItem("connectionMode", "pacemaker");
+  //     setConnectionMode("pacemaker");
+  //     localStorage.setItem("connectionMode", "pacemaker");
 
-      // Clear fallback so UI shows live values again
-      setFallbackParams(null);
-    }
-  }, [wsConnected, connectionMode]);
+  //     // Clear fallback so UI shows live values again
+  //     setFallbackParams(null);
+  //   }
+  // }, [wsConnected, connectionMode]);
 
   // auto swap back to hardware mode + sends current params to hardware 
   useEffect(() => {
