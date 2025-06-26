@@ -456,24 +456,50 @@ const ModulePage = () => {
   // }, [wsConnected, connectionMode, pacemakerParams, sendControlUpdate]);
 
 
-  // ====== TEST VERSION 1: NO SENDING - Let hardware report its own state ======
+  // ====== TEST VERSION 2: ENHANCED LOGGING - See exactly what we're sending ======
   useEffect(() => {
     if (wsConnected && connectionMode === "simulated") {
       console.log("🔌 WebSocket reconnected — switching to pacemaker mode");
       
-      // DEBUG: What are we currently holding?
-      console.log("📊 Current pacemakerParams:", pacemakerParams);
-      console.log("📊 Current fallbackParams:", fallbackParams);
+      // DETAILED LOGGING
+      console.log("📊 BEFORE sending:");
+      console.log("  pacemakerParams:", pacemakerParams);
+      console.log("  fallbackParams:", fallbackParams);
+      console.log("  currentModule?.initialParams:", currentModule?.initialParams);
       
-      // DON'T send anything - just switch mode and let hardware tell us what it has
-      console.log("🛑 TEST: Not sending values - letting hardware report current state");
       setConnectionMode("pacemaker");
       localStorage.setItem("connectionMode", "pacemaker");
+
+      // Build payload with detailed logging
+      const paramMap = {
+        rate: "rate",
+        aOutput: "a_output",
+        vOutput: "v_output",
+        aSensitivity: "aSensitivity",
+        vSensitivity: "vSensitivity",
+      };
+
+      const payload: Record<string, number> = {};
+      for (const key in paramMap) {
+        const value = pacemakerParams[key as keyof typeof pacemakerParams];
+        payload[paramMap[key as keyof typeof paramMap]] = value;
+        console.log(`  Building payload: ${key} (${paramMap[key as keyof typeof paramMap]}) = ${value}`);
+      }
+
+      console.log("🔁 FINAL PAYLOAD being sent to hardware:", payload);
+
+      try {
+        overrideOnReconnect.current = true;
+        sendControlUpdate(payload as any);
+        console.log("✅ Successfully sent payload to hardware");
+      } catch (error) {
+        console.error("❌ Failed to send values to hardware:", error);
+      }
+
       setFallbackParams(null);
-      
-      // Hardware will send its current state via onStateChange
     }
-  }, [wsConnected, connectionMode]); // Removed pacemakerParams dependency
+  }, [wsConnected, connectionMode, pacemakerParams, sendControlUpdate]);
+
 
 
 
