@@ -118,17 +118,8 @@ export const useStepController = ({
     }
   }, [currentParams, currentStep, isQuizCompleted, isStepComplete, completedSteps, handleStepComplete]);
 
-  // Get allowed controls for current step
-  const getAllowedControls = useCallback(() => {
-    if (!currentStep) return [];
-    return currentStep.allowedControls || [];
-  }, [currentStep]);
-
-  // Check if a specific control is allowed
-  const isControlAllowed = useCallback((controlName: string) => {
-    const allowedControls = getAllowedControls();
-    return allowedControls.length === 0 || allowedControls.includes(controlName);
-  }, [getAllowedControls]);
+  // REMOVED: getAllowedControls and isControlAllowed functions
+  // All controls are now always allowed
 
   // Get flashing sensor for current step
   const getFlashingSensor = useCallback(() => {
@@ -182,9 +173,7 @@ export const useStepController = ({
     getProgressPercentage,
     getStepSummary,
 
-    // Control info
-    getAllowedControls,
-    isControlAllowed,
+    // Sensor flashing (still useful for visual feedback)
     getFlashingSensor,
 
     // Actions
