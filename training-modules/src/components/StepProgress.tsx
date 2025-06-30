@@ -78,7 +78,7 @@ const StepProgress = ({
     <div className={`bg-[#F0F6FE] rounded-xl p-6 ${className}`}>
       {/* Header with step counter and progress dots */}
       <div className="flex items-center justify-between">
-        <div className="font-semibold mb-1 text-gray-700">
+        <div className="font-bold mb-1 text-gray-700">
           Step {currentStepIndex + 1}: {currentStep.objective}
         </div>
         
