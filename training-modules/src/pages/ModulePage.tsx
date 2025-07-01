@@ -1753,7 +1753,7 @@ const ModulePage = () => {
     [currentSession, updateSession],
   );
 
-    const {
+  const {
     steps,
     currentStep,
     currentStepIndex,
@@ -1762,10 +1762,12 @@ const ModulePage = () => {
     getProgressPercentage,
     getFlashingSensor,
     handleStepComplete,
+    isInitialized,
   } = useStepController({
     moduleId: moduleId || "1",
     currentParams: pacemakerParams,
     isQuizCompleted: quizCompleted,
+    currentSession,
     onParameterChange: handleParameterChange
   });
 
@@ -1773,6 +1775,24 @@ const ModulePage = () => {
     left: false,
     right: false,
   });
+
+  useEffect(() => {
+    (window as any).updateSessionStepProgress = (stepProgress: any) => {
+      if (currentSession?.id) {
+        console.log('📝 Updating session step progress:', stepProgress);
+        updateSession(currentSession.id, {
+          practiceState: {
+            ...currentSession.practiceState,
+            stepProgress
+          }
+        });
+      }
+    };
+
+    return () => {
+      delete (window as any).updateSessionStepProgress;
+    };
+  }, [currentSession, updateSession]);
 
   // Simple initialization tracking
   const initialized = useRef(false);
@@ -1952,10 +1972,35 @@ const ModulePage = () => {
     // Add step-specific flashing from step controller
     const stepFlashingSensor = getFlashingSensor();
     
+    // For steps that check sensing thresholds, stop flashing when threshold is met
+    const shouldStopFlashing = (sensor: "left" | "right") => {
+      if (!currentStep?.targetValues) return false;
+      
+      // Check if this is a sensitivity step and if we've reached the threshold
+      if (sensor === "left" && currentStep.targetValues.aSensitivity) {
+        const target = currentStep.targetValues.aSensitivity;
+        const current = pacemakerParams.aSensitivity;
+        const tolerance = target < 1 ? 0.1 : 0.2;
+        
+        // If we're at or above the target sensitivity, stop flashing
+        return Math.abs(current - target) <= tolerance;
+      }
+      
+      if (sensor === "right" && currentStep.targetValues.vSensitivity) {
+        const target = currentStep.targetValues.vSensitivity;
+        const current = pacemakerParams.vSensitivity;
+        const tolerance = target < 1 ? 0.1 : 0.2;
+        
+        return Math.abs(current - target) <= tolerance;
+      }
+      
+      return false;
+    };
+    
     setSensorStates((prev) => {
       const newState = { 
-        left: leftShouldFlash || stepFlashingSensor === "left",
-        right: rightShouldFlash || stepFlashingSensor === "right"
+        left: (leftShouldFlash || stepFlashingSensor === "left") && !shouldStopFlashing("left"),
+        right: (rightShouldFlash || stepFlashingSensor === "right") && !shouldStopFlashing("right")
       };
       
       if (prev.left === newState.left && prev.right === newState.right) {
@@ -1963,7 +2008,8 @@ const ModulePage = () => {
       }
       return newState;
     });
-  }, [displayAOutput, displayVOutput, pacemakerParams.aSensitivity, pacemakerParams.vSensitivity, getFlashingSensor]);
+  }, [displayAOutput, displayVOutput, pacemakerParams.aSensitivity, pacemakerParams.vSensitivity, getFlashingSensor, currentStep]);
+
 
   // handles connection mode changes
   useEffect(() => {
@@ -2333,7 +2379,7 @@ const ModulePage = () => {
             </div>
 
             {/* Step Progress Component - Only show after quiz completion */}
-            {quizCompleted && steps.length > 0 && (
+            {quizCompleted && steps.length > 0 && isInitialized && (
               <StepProgress
                 steps={steps}
                 currentStepIndex={currentStepIndex}
@@ -2687,14 +2733,14 @@ const ModulePage = () => {
                 </button>
                 <button
                   onClick={() => handleComplete(true)}
-                  disabled={steps.length > 0 && !allStepsCompleted}
+                  disabled={steps.length > 0 && (!allStepsCompleted || !isInitialized)}
                   className={`w-full py-3 rounded-lg transition-colors ${
-                    steps.length > 0 && !allStepsCompleted
+                    steps.length > 0 && (!allStepsCompleted || !isInitialized)
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-green-600 text-white hover:bg-green-700'
                   }`}
                 >
-                  {steps.length > 0 && !allStepsCompleted 
+                  {steps.length > 0 && (!allStepsCompleted || !isInitialized)
                     ? `Complete All Steps (${completedSteps.size}/${steps.length})`
                     : 'Complete Module'
                   }

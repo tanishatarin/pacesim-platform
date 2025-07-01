@@ -48,6 +48,41 @@ const defaultCompletionCriteria = (currentParams: any, targetValues: any): boole
   return true;
 };
 
+// ADD THESE CUSTOM COMPLETION FUNCTIONS HERE:
+
+// Custom completion criteria for sensing threshold steps
+const sensingThresholdCriteria = (currentParams: any, targetValues: any): boolean => {
+  const currentSens = currentParams.aSensitivity;
+  const targetSens = targetValues.aSensitivity;
+  const tolerance = 0.1;
+  
+  const isAtTarget = Math.abs(currentSens - targetSens) <= tolerance;
+  
+  // Log for debugging
+  console.log(`🔍 Sensing threshold check: current=${currentSens}, target=${targetSens}, tolerance=${tolerance}, met=${isAtTarget}`);
+  
+  return isAtTarget;
+};
+
+// Custom completion criteria for ventricular sensing threshold
+const vSensingThresholdCriteria = (currentParams: any, targetValues: any): boolean => {
+  const currentSens = currentParams.vSensitivity;
+  const targetSens = targetValues.vSensitivity;
+  const tolerance = 0.1;
+  
+  const isAtTarget = Math.abs(currentSens - targetSens) <= tolerance;
+  
+  console.log(`🔍 V-Sensing threshold check: current=${currentSens}, target=${targetSens}, tolerance=${tolerance}, met=${isAtTarget}`);
+  
+  return isAtTarget;
+};
+
+// Auto-complete function for observation steps
+const autoCompleteCriteria = (currentParams: any, targetValues: any): boolean => {
+  // Always return true for observation steps - they auto-complete after a delay
+  return true;
+};
+
 export const moduleConfigs: Record<string, ModuleConfig> = {
   "1": {
     id: "1",
@@ -95,13 +130,13 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
       },
       {
         id: "step4",
-        objective: "Increase aSensitivity to 1.6 mV",
-        instruction: "Slowly increase atrial sensitivity until the sensing light stops flashing. This indicates you've found the sensing threshold.",
+        objective: "Find sensing threshold",
+        instruction: "Slowly increase atrial sensitivity to 1.6 mV. Watch the sensing light - it will stop flashing when you reach the threshold.",
         targetValues: { aSensitivity: 1.6 },
         allowedControls: ["aSensitivity"],
         flashingSensor: "left",
-        completionCriteria: defaultCompletionCriteria,
-        hint: "Watch the sensing light - when it stops flashing, you've hit the threshold"
+        completionCriteria: sensingThresholdCriteria, // USE THE CUSTOM FUNCTION HERE
+        hint: "The sensing light represents the pacemaker detecting intrinsic cardiac activity. When you reach the threshold, it stops flashing."
       },
       {
         id: "step5",
@@ -177,7 +212,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: {}, // No parameter changes, just observation
         allowedControls: [],
         flashingSensor: "right",
-        completionCriteria: () => true, // Auto-advance after delay
+        completionCriteria: autoCompleteCriteria, // Auto-advance after delay
         hint: "Look for pacing spikes that should be present but are missing due to false sensing"
       },
       {
@@ -187,7 +222,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: { vSensitivity: 2.0 },
         allowedControls: ["vSensitivity"],
         flashingSensor: "right",
-        completionCriteria: defaultCompletionCriteria,
+        completionCriteria: vSensingThresholdCriteria, // Use custom criteria
         hint: "Decreasing sensitivity makes the pacemaker less likely to detect false signals"
       },
       {
@@ -197,7 +232,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: { aSensitivity: 2.0 },
         allowedControls: ["aSensitivity"],
         flashingSensor: "left",
-        completionCriteria: defaultCompletionCriteria,
+        completionCriteria: sensingThresholdCriteria,
         hint: "Both chambers may need sensitivity adjustment to eliminate oversensing"
       },
       {
@@ -207,12 +242,13 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: {},
         allowedControls: [],
         flashingSensor: null,
-        completionCriteria: () => true,
+        completionCriteria: autoCompleteCriteria,
         hint: "The ECG should now show regular pacing spikes at the programmed rate"
       }
     ]
   },
 
+  // Continue with other modules...
   "3": {
     id: "3",
     title: "Scenario 3: Undersensing Problems", 
@@ -234,7 +270,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: {},
         allowedControls: [],
         flashingSensor: "right",
-        completionCriteria: () => true,
+        completionCriteria: autoCompleteCriteria,
         hint: "Look for pacing spikes that occur too close to intrinsic beats"
       },
       {
@@ -244,7 +280,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: { vSensitivity: 2.0 },
         allowedControls: ["vSensitivity"],
         flashingSensor: "right",
-        completionCriteria: defaultCompletionCriteria,
+        completionCriteria: vSensingThresholdCriteria,
         hint: "Higher sensitivity helps detect smaller intrinsic signals"
       },
       {
@@ -254,7 +290,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: { aSensitivity: 1.5 },
         allowedControls: ["aSensitivity"],
         flashingSensor: "left", 
-        completionCriteria: defaultCompletionCriteria,
+        completionCriteria: sensingThresholdCriteria,
         hint: "Both chambers need appropriate sensitivity for proper sensing"
       },
       {
@@ -264,7 +300,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: {},
         allowedControls: [],
         flashingSensor: null,
-        completionCriteria: () => true,
+        completionCriteria: autoCompleteCriteria,
         hint: "Pacing should only occur when intrinsic beats are not detected"
       }
     ]
@@ -338,7 +374,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: {},
         allowedControls: [],
         flashingSensor: "right",
-        completionCriteria: () => true,
+        completionCriteria: autoCompleteCriteria,
         hint: "Look for pacing artifacts that are not followed by cardiac depolarization"
       },
       {
@@ -358,7 +394,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: {},
         allowedControls: [],
         flashingSensor: null,
-        completionCriteria: () => true,
+        completionCriteria: autoCompleteCriteria,
         hint: "Successful capture shows QRS complexes following each pacing spike"
       }
     ]

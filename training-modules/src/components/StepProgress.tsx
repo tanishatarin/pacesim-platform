@@ -43,16 +43,13 @@ const StepProgress = ({
 
   const stepComplete = isCurrentStepComplete();
 
-  // Auto-advance to next step when current is complete
+  // Auto-advance to next step when current is complete - NO DELAY
   useEffect(() => {
     if (stepComplete && !completedSteps.has(currentStep?.id || '')) {
-      const timer = setTimeout(() => {
-        if (currentStep && onStepComplete) {
-          onStepComplete(currentStep.id);
-        }
-      }, 1000); // 1.5 second delay to show completion
-
-      return () => clearTimeout(timer);
+      if (currentStep && onStepComplete) {
+        console.log('🚀 Step complete, advancing immediately');
+        onStepComplete(currentStep.id);
+      }
     }
   }, [stepComplete, currentStep?.id, completedSteps, onStepComplete]);
 
@@ -91,11 +88,11 @@ const StepProgress = ({
             return (
               <div
                 key={step.id}
-                className={`w-3 h-3 rounded-full transition-colors ${
+                className={`w-3 h-3 rounded-full ${
                   isCompleted
                     ? 'bg-green-500'
                     : isCurrent
-                    ? stepComplete ? 'bg-green-500' : 'bg-blue-500 animate-pulse'
+                    ? stepComplete ? 'bg-green-500' : 'bg-blue-500'
                     : 'bg-gray-300'
                 }`}
               />
