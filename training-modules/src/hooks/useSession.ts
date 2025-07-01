@@ -376,6 +376,31 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import db from "../lib/db";
 import type { Session } from "../lib/db";
 
+export type PracticeState = {
+  parameterChanges: Array<{
+    timestamp: string;
+    parameter: string;
+    oldValue: number;
+    newValue: number;
+    reason?: string;
+  }>;
+  currentParameters: {
+    rate: number;
+    aOutput: number;
+    vOutput: number;
+    aSensitivity: number;
+    vSensitivity: number;
+  };
+  timeSpentInPractice: number;
+  // Enhanced step tracking
+  stepProgress?: {
+    currentStepIndex: number;
+    completedSteps: string[];
+    allStepsCompleted: boolean;
+    lastUpdated: string; // Add timestamp for debugging
+  };
+};
+
 export const useSession = (userId?: string) => {
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [sessionHistory, setSessionHistory] = useState<Session[]>([]);
@@ -933,6 +958,89 @@ export const useSession = (userId?: string) => {
     };
   }, [userId, sessionHistory, getSessionStats]);
 
+  const updateStepProgress = useCallback(
+    (sessionId: string, stepProgress: {
+      currentStepIndex: number;
+      completedSteps: string[];
+      allStepsCompleted: boolean;
+    }) => {
+      if (!userId) return;
+
+      console.log('📝 Updating step progress in session:', stepProgress);
+
+      try {
+        db.read();
+        const sessionIndex = db.data!.sessions.findIndex(s => s.id === sessionId);
+        
+        if (sessionIndex === -1) {
+          console.warn('⚠️ Session not found for step progress update:', sessionId);
+          return;
+        }
+
+        const session = db.data!.sessions[sessionIndex];
+        const updatedSession = {
+          ...session,
+          lastActiveAt: new Date().toISOString(),
+          practiceState: {
+            ...session.practiceState,
+            stepProgress: {
+              ...stepProgress,
+              lastUpdated: new Date().toISOString()
+            }
+          }
+        };
+
+        db.data!.sessions[sessionIndex] = updatedSession;
+        db.write();
+
+        // Update state immediately
+        if (currentSession?.id === sessionId) {
+          setCurrentSession(updatedSession);
+        }
+
+        setSessionHistory(prev =>
+          prev.map(s => s.id === sessionId ? updatedSession : s)
+        );
+
+        console.log('✅ Step progress updated successfully');
+      } catch (error) {
+        console.error('❌ Error updating step progress:', error);
+      }
+    },
+    [userId, currentSession?.id]
+  );
+
+  // Then add this to your return statement at the bottom of useSession:
+  return {
+    // Core session management
+    currentSession,
+    sessionHistory,
+    isLoading,
+    startSession,
+    endSession,
+    updateSession,
+    resumeSession,
+    getIncompleteSession,
+
+    // Quiz functionality
+    addQuizAnswer,
+
+    // Practice functionality
+    addParameterChange,
+
+    // Analytics
+    incrementHints,
+    incrementErrors,
+    getSessionStats,
+    getModuleProgress,
+
+    // Data export
+    exportSessionData,
+
+    // ADD THIS LINE:
+    updateStepProgress,
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -952,6 +1060,7 @@ export const useSession = (userId?: string) => {
     updateSession,
     resumeSession,
     getIncompleteSession,
+    updateStepProgress,
 
     // Quiz functionality
     addQuizAnswer,

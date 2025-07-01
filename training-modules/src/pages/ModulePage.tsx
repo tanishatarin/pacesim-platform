@@ -1574,6 +1574,7 @@ const ModulePage = () => {
     currentSession,
     getIncompleteSession,
     resumeSession,
+    updateStepProgress
   } = useSession(currentUser?.id);
 
   const { 
@@ -1753,6 +1754,12 @@ const ModulePage = () => {
     [currentSession, updateSession],
   );
 
+  const handleStepProgressUpdate = useCallback((stepProgress: any) => {
+    if (currentSession?.id && updateStepProgress) {
+      updateStepProgress(currentSession.id, stepProgress);
+    }
+  }, [currentSession?.id, updateStepProgress]);
+
   const {
     steps,
     currentStep,
@@ -1768,31 +1775,27 @@ const ModulePage = () => {
     currentParams: pacemakerParams,
     isQuizCompleted: quizCompleted,
     currentSession,
-    onParameterChange: handleParameterChange
+    updateStepProgress: handleStepProgressUpdate, // PASS THE FUNCTION DIRECTLY
   });
+
+  // DEBIGGING useStepController
+  useEffect(() => {
+    console.log('🔍 Step Controller Debug:', {
+      steps: steps.length,
+      currentStep: currentStep?.id,
+      currentStepIndex,
+      completedSteps: Array.from(completedSteps),
+      allStepsCompleted,
+      isInitialized,
+      quizCompleted,
+      sessionId: currentSession?.id
+    });
+  }, [steps, currentStep, currentStepIndex, completedSteps, allStepsCompleted, isInitialized, quizCompleted, currentSession?.id]);
 
   const [sensorStates, setSensorStates] = useState({
     left: false,
     right: false,
   });
-
-  useEffect(() => {
-    (window as any).updateSessionStepProgress = (stepProgress: any) => {
-      if (currentSession?.id) {
-        console.log('📝 Updating session step progress:', stepProgress);
-        updateSession(currentSession.id, {
-          practiceState: {
-            ...currentSession.practiceState,
-            stepProgress
-          }
-        });
-      }
-    };
-
-    return () => {
-      delete (window as any).updateSessionStepProgress;
-    };
-  }, [currentSession, updateSession]);
 
   // Simple initialization tracking
   const initialized = useRef(false);
@@ -1966,32 +1969,44 @@ const ModulePage = () => {
   useEffect(() => {
     if (!currentModule) return;
 
+    // Base flashing logic (like original app)
     const leftShouldFlash = displayAOutput > 0 && pacemakerParams.aSensitivity > 0;
     const rightShouldFlash = displayVOutput > 0 && pacemakerParams.vSensitivity > 0;
     
-    // Add step-specific flashing from step controller
+    // Get step-specific flashing from step controller
     const stepFlashingSensor = getFlashingSensor();
     
-    // For steps that check sensing thresholds, stop flashing when threshold is met
-    const shouldStopFlashing = (sensor: "left" | "right") => {
-      if (!currentStep?.targetValues) return false;
-      
-      // Check if this is a sensitivity step and if we've reached the threshold
-      if (sensor === "left" && currentStep.targetValues.aSensitivity) {
-        const target = currentStep.targetValues.aSensitivity;
-        const current = pacemakerParams.aSensitivity;
-        const tolerance = target < 1 ? 0.1 : 0.2;
-        
-        // If we're at or above the target sensitivity, stop flashing
-        return Math.abs(current - target) <= tolerance;
+    // Advanced logic: stop flashing after certain thresholds are reached
+    const shouldStopFlashingLeft = () => {
+      // Stop flashing left sensor if we've completed sensitivity calibration
+      if (completedSteps.has('step4') || completedSteps.has('step5')) {
+        return true; // Sensitivity calibration done
       }
       
-      if (sensor === "right" && currentStep.targetValues.vSensitivity) {
-        const target = currentStep.targetValues.vSensitivity;
-        const current = pacemakerParams.vSensitivity;
-        const tolerance = target < 1 ? 0.1 : 0.2;
-        
-        return Math.abs(current - target) <= tolerance;
+      // For Module 1: Stop flashing when we reach certain milestones
+      if (moduleId === "1") {
+        // Stop flashing if we're in capture testing phase (step 7+)
+        if (currentStepIndex >= 6) {
+          return pacemakerParams.aSensitivity >= 0.8; // Safety margin set
+        }
+        // During sensitivity testing, flash until threshold found
+        if (currentStepIndex >= 3 && currentStepIndex <= 5) {
+          return false; // Keep flashing during sensitivity testing
+        }
+      }
+      
+      return false;
+    };
+
+    const shouldStopFlashingRight = () => {
+      // Similar logic for right sensor
+      if (completedSteps.has('step4') || completedSteps.has('step5')) {
+        return true;
+      }
+      
+      if (moduleId === "1") {
+        // Right sensor mainly for ventricular - less used in Module 1
+        return currentStepIndex >= 6; // Stop after sensitivity testing
       }
       
       return false;
@@ -1999,17 +2014,27 @@ const ModulePage = () => {
     
     setSensorStates((prev) => {
       const newState = { 
-        left: (leftShouldFlash || stepFlashingSensor === "left") && !shouldStopFlashing("left"),
-        right: (rightShouldFlash || stepFlashingSensor === "right") && !shouldStopFlashing("right")
+        left: (leftShouldFlash || stepFlashingSensor === "left") && !shouldStopFlashingLeft(),
+        right: (rightShouldFlash || stepFlashingSensor === "right") && !shouldStopFlashingRight()
       };
       
       if (prev.left === newState.left && prev.right === newState.right) {
         return prev;
       }
+      
       return newState;
     });
-  }, [displayAOutput, displayVOutput, pacemakerParams.aSensitivity, pacemakerParams.vSensitivity, getFlashingSensor, currentStep]);
-
+  }, [
+    displayAOutput, 
+    displayVOutput, 
+    pacemakerParams.aSensitivity, 
+    pacemakerParams.vSensitivity, 
+    getFlashingSensor, 
+    currentStep,
+    currentStepIndex,
+    completedSteps,
+    moduleId
+  ]);
 
   // handles connection mode changes
   useEffect(() => {
