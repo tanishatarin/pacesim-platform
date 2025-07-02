@@ -1045,7 +1045,8 @@ const ModulePage = () => {
                 rate={displayRate}
                 aOutput={displayAOutput}
                 vOutput={displayVOutput}
-                sensitivity={pacemakerParams.aSensitivity}
+                sensitivity={pacemakerParams.aSensitivity} 
+                //todo - shoud sensitivity not be a or v depenfding on which
                 mode={currentModule.mode}
               />
             </div>

@@ -27,6 +27,7 @@ export interface PacemakerInfoItem {
 }
 
 export interface ModuleStep {
+  id: string;
   objective: string;
   allowedControls: string[];
   targetValues?: Partial<PacemakerState>;
