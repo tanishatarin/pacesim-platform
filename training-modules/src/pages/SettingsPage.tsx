@@ -252,7 +252,7 @@ const SettingsPage = () => {
       </div>
 
       {/* Debug Info (Development only) */}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <div className="w-full px-8 py-6 bg-white shadow-lg rounded-3xl border-2 border-dashed border-gray-300">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Debug Info</h3>
           <div className="text-sm text-gray-600 space-y-2">
@@ -286,7 +286,7 @@ const SettingsPage = () => {
             </ul>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

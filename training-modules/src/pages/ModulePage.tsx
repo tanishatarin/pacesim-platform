@@ -1,6 +1,3 @@
-
-// july 2 11am  attempt at making module sbe able to resume 
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -216,7 +213,7 @@ const ModulePage = () => {
   const [resumeBannerSession, setResumeBannerSession] = useState<any>(null);
   const [patientHeartRate] = useState(40);
   const [isPageReady, setIsPageReady] = useState(false);
-  const [connectionMode, setConnectionMode] = useState(() => {
+  const [connectionMode] = useState(() => {
     return localStorage.getItem("connectionMode") || "simulated";
   });
   const [pacemakerParams, setPacemakerParams] = useState(() => {
@@ -555,8 +552,14 @@ const ModulePage = () => {
   } = useStepController(stepControllerProps);
 
   // ============ ALL EFFECTS ============
+  // FIXED: Main initialization effect
   useEffect(() => {
     if (!currentUser || !moduleId || !currentModule) {
+      console.log("❌ Missing requirements for initialization:", { 
+        hasUser: !!currentUser, 
+        hasModuleId: !!moduleId, 
+        hasModule: !!currentModule 
+      });
       setIsPageReady(false);
       return;
     }
@@ -565,44 +568,72 @@ const ModulePage = () => {
       console.log("🎬 Starting module initialization for:", moduleId);
       
       try {
-        // setPacemakerParams(currentModule.initialParams);
-        
+        // FIRST: Check for incomplete session for THIS SPECIFIC MODULE
         const incompleteSession = getIncompleteSession(moduleId);
         
         if (incompleteSession) {
-          console.log("📋 Found incomplete session:", incompleteSession.id);
+          console.log("📋 Found incomplete session for module", moduleId, ":", {
+            id: incompleteSession.id,
+            currentStep: incompleteSession.currentStep,
+            quizCompleted: incompleteSession.quizState?.isCompleted,
+            lastActive: incompleteSession.lastActiveAt
+          });
           
-          if (incompleteSession.currentStep === "quiz" && !incompleteSession.quizState?.isCompleted) {
-            console.log("📝 Auto-resuming quiz phase");
-            resumeSession(incompleteSession.id);
-          } else {
-            console.log("🎯 Showing resume banner for practice phase");
-            setResumeBannerSession(incompleteSession);
-          }
+          // Auto-resume the session
+          console.log("▶️ Auto-resuming existing session");
+          resumeSession(incompleteSession.id);
+          
+          // Don't reset parameters - they'll be restored from session
+          setResumeBannerSession(null); // Don't show banner for auto-resume
+          
         } else {
-          console.log("🆕 No incomplete session - fresh start");
-          // Start a new session if we don't have one
+          console.log("🆕 No incomplete session for module", moduleId, "- starting fresh");
+          
+          // ONLY start new session if no incomplete one exists
           if (!currentSession) {
             const sessionId = startSession(moduleId, currentModule.title);
             console.log("🚀 Started new session:", sessionId);
           }
+          
+          // Reset to initial parameters for fresh start
+          console.log("🔄 Setting initial parameters:", currentModule.initialParams);
+          setPacemakerParams(currentModule.initialParams);
+          setResumeBannerSession(null);
+        }
+        
+      } catch (error) {
+        console.error("❌ Error during initialization:", error);
+        // Fallback to fresh start with null checks
+        if (currentModule?.initialParams) {
+          console.log("🔄 Falling back to fresh start");
           setPacemakerParams(currentModule.initialParams);
         }
-      } catch (error) {
-        console.error("Error during initialization:", error);
       } finally {
         setIsPageReady(true);
       }
     };
 
     initializeModule();
-  }, [currentUser?.id, moduleId /*, currentModule, getIncompleteSession, resumeSession*/]);
+  }, [
+    currentUser?.id,  
+    moduleId,         
+    currentModule?.title // Use title instead of non-existent id
+    // Removed dependencies that cause loops
+  ]);
 
+  // FIXED: Separate effect for restoring session state AFTER page is ready
   useEffect(() => {
-    if (!currentSession?.id || !isPageReady) return;
+    if (!currentSession?.id || !isPageReady) {
+      console.log("⏳ Waiting for session and page ready:", { 
+        hasSession: !!currentSession?.id, 
+        isReady: isPageReady 
+      });
+      return;
+    }
 
-    console.log("🔄 Restoring session state:", currentSession.id);
+    console.log("🔄 Restoring session state for:", currentSession.id);
 
+    // Restore quiz state
     if (currentSession.quizState.isCompleted && !quizCompleted) {
       console.log("📝 Restoring completed quiz state");
       setQuizCompleted(true);
@@ -615,31 +646,39 @@ const ModulePage = () => {
       });
     }
 
+    // Restore parameters from session (only if different from current)
     if (currentSession.practiceState.currentParameters) {
       const sessionParams = currentSession.practiceState.currentParameters;
-      console.log("📊 Restoring parameters from session:", sessionParams);
+      console.log("📊 Session parameters:", sessionParams);
+      console.log("📊 Current parameters:", pacemakerParams);
       
-      setPacemakerParams((prev) => {
-        const isDifferent = Object.keys(sessionParams).some(
-          key => prev[key as keyof typeof prev] !== sessionParams[key as keyof typeof sessionParams]
-        );
-        
-        if (isDifferent) {
-          console.log("📊 Parameters were different, updating");
-          return sessionParams;
-        } else {
-          console.log("📊 Parameters unchanged, keeping current");
-          return prev;
-        }
-      });
+      const isDifferent = Object.keys(sessionParams).some(
+        key => pacemakerParams[key as keyof typeof pacemakerParams] !== 
+               sessionParams[key as keyof typeof sessionParams]
+      );
+      
+      if (isDifferent) {
+        console.log("📊 Restoring different parameters from session");
+        setPacemakerParams(sessionParams);
+      } else {
+        console.log("📊 Parameters already match session, no update needed");
+      }
     }
-  }, [currentSession?.id, isPageReady, quizCompleted]);
+  }, [
+    currentSession?.id, 
+    isPageReady
+    // Removed pacemakerParams dependency to prevent loops
+  ]);
 
   useEffect(() => {
+    console.log("📍 ModulePage mounted for module:", moduleId);
+    
     return () => {
-      endSessionForNavigation();
+      console.log("📍 ModulePage unmounting for module:", moduleId);
+      // DON'T automatically end sessions on navigation
+      // Let them persist until explicitly ended
     };
-  }, [endSessionForNavigation]);
+  }, [moduleId]);
 
   useEffect(() => {
     if (isConnected && pacemakerState) {
@@ -758,7 +797,7 @@ const ModulePage = () => {
   const connectionStatus = getConnectionStatusDisplay();
 
   // ============ EARLY RETURNS - AFTER ALL HOOKS ============
-  if (!currentModule) {
+  if (!currentModule || !moduleId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">

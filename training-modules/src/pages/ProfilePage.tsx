@@ -595,8 +595,8 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Session History - Now Grouped by Attempts */}
-      <div className="bg-white shadow-lg rounded-3xl">
+      {/* Session History - OLD --> Grouped by Attempts */}
+      {/* <div className="bg-white shadow-lg rounded-3xl">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -698,10 +698,246 @@ const ProfilePage = () => {
             </div>
           )}
         </div>
+      </div> */}
+
+      {/* new session history to help debuig july 2nd  */}
+      {/* Enhanced Session History - Now with Debug Info */}
+      <div className="bg-white shadow-lg rounded-3xl">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Clock className="w-5 h-5 mr-2 text-purple-500" />
+              Training Session History (DEBUG MODE)
+              <span className="ml-2 text-sm text-gray-500">
+                ({sessionHistory.length} total sessions)
+              </span>
+            </h3>
+
+            {sessionHistory.length > 10 && (
+              <button
+                onClick={() => setShowAllSessions(!showAllSessions)}
+                className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <span>{showAllSessions ? "Show Recent" : "Show All"}</span>
+                {showAllSessions ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-lg font-bold text-green-600">
+                {sessionHistory.filter(s => s.completedAt && s.isSuccess).length}
+              </div>
+              <div className="text-xs text-gray-500">Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-red-600">
+                {sessionHistory.filter(s => s.completedAt && !s.isSuccess).length}
+              </div>
+              <div className="text-xs text-gray-500">Failed/Ended</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-yellow-600">
+                {sessionHistory.filter(s => !s.completedAt).length}
+              </div>
+              <div className="text-xs text-gray-500">Incomplete</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-gray-600">
+                {sessionHistory.filter(s => s.totalTimeSpent && s.totalTimeSpent < 30).length}
+              </div>
+              <div className="text-xs text-gray-500"> 30 seconds</div>
+            </div>
+          </div>
+
+          {sessionHistory.length > 0 ? (
+            <div className="space-y-3">
+              {sessionHistory
+                .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+                .slice(0, showAllSessions ? undefined : 15)
+                .map((session) => {
+                  const isIncomplete = !session.completedAt;
+                  const isVeryShort = session.totalTimeSpent && session.totalTimeSpent < 30;
+                  const hasQuizProgress = session.quizState?.answers?.length > 0;
+                  const hasParameterChanges = session.practiceState?.parameterChanges?.length > 0;
+                  
+                  return (
+                    <div
+                      key={session.id}
+                      className={`border rounded-lg p-4 ${
+                        isIncomplete 
+                          ? 'border-yellow-300 bg-yellow-50' 
+                          : session.isSuccess 
+                          ? 'border-green-300 bg-green-50'
+                          : 'border-red-300 bg-red-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            isIncomplete 
+                              ? 'bg-yellow-500' 
+                              : session.isSuccess 
+                              ? 'bg-green-500'
+                              : 'bg-red-500'
+                          }`} />
+                          <div>
+                            <h4 className="font-medium text-gray-900">
+                              Module {session.moduleId}: {session.moduleName}
+                            </h4>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span>ID: {session.id.slice(-8)}</span>
+                              <span>Started: {formatDateTime(session.startedAt)}</span>
+                              {session.completedAt && (
+                                <span>Ended: {formatDateTime(session.completedAt)}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isIncomplete
+                              ? "bg-yellow-100 text-yellow-800"
+                              : session.isSuccess
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                            {isIncomplete ? "🔄 INCOMPLETE" : session.isSuccess ? "✅ Success" : "❌ Failed"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Debug Info Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                        <div className={`p-2 rounded ${isVeryShort ? 'bg-red-100' : 'bg-white'}`}>
+                          <div className="text-gray-500">Duration</div>
+                          <div className={`font-medium ${isVeryShort ? 'text-red-700' : 'text-gray-900'}`}>
+                            {session.totalTimeSpent ? formatDuration(session.totalTimeSpent, true) : "0s"}
+                            {isVeryShort && " ⚠️"}
+                          </div>
+                        </div>
+                        
+                        <div className="p-2 bg-white rounded">
+                          <div className="text-gray-500">Current Step</div>
+                          <div className="font-medium text-gray-900">{session.currentStep}</div>
+                        </div>
+                        
+                        <div className={`p-2 rounded ${hasQuizProgress ? 'bg-blue-100' : 'bg-white'}`}>
+                          <div className="text-gray-500">Quiz Progress</div>
+                          <div className="font-medium text-gray-900">
+                            {session.quizState?.isCompleted ? (
+                              `${session.quizState.score}/${session.quizState.totalQuestions} ✓`
+                            ) : hasQuizProgress ? (
+                              `${session.quizState?.answers?.length || 0} answers`
+                            ) : (
+                              "Not started"
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className={`p-2 rounded ${hasParameterChanges ? 'bg-green-100' : 'bg-white'}`}>
+                          <div className="text-gray-500">Parameter Changes</div>
+                          <div className="font-medium text-gray-900">
+                            {session.practiceState?.parameterChanges?.length || 0}
+                            {hasParameterChanges && " 🔧"}
+                          </div>
+                        </div>
+                        
+                        <div className="p-2 bg-white rounded">
+                          <div className="text-gray-500">Last Active</div>
+                          <div className="font-medium text-gray-900">
+                            {formatDateTime(session.lastActiveAt)}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Warning Messages */}
+                      <div className="mt-3 space-y-1">
+                        {isVeryShort && (
+                          <div className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                            ⚠️ Very short session - possible navigation/refresh issue
+                          </div>
+                        )}
+                        {isIncomplete && (
+                          <div className="text-xs text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
+                            🔄 This session should be resumable - check getIncompleteSession logic
+                          </div>
+                        )}
+                        {!isIncomplete && !session.isSuccess && session.totalTimeSpent && session.totalTimeSpent > 60 && (
+                          <div className="text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded">
+                            📝 Failed session with significant progress - check endSession logic
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step Progress Debug */}
+                      {session.practiceState?.stepProgress && (
+                        <div className="mt-3 p-2 bg-purple-50 rounded text-xs">
+                          <div className="font-medium text-purple-800">Step Progress:</div>
+                          <div className="text-purple-700">
+                            Current: {session.practiceState.stepProgress.currentStepIndex} • 
+                            Completed: [{session.practiceState.stepProgress.completedSteps.join(', ')}] • 
+                            All Done: {session.practiceState.stepProgress.allStepsCompleted ? 'Yes' : 'No'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No training sessions yet.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Complete your first training module to see your session history here.
+              </p>
+            </div>
+          )}
+
+          {/* Debug Raw Data (Development Only) */}
+          {process.env.NODE_ENV === 'development' && sessionHistory.length > 0 && (
+            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+              <details className="text-sm">
+                <summary className="font-medium cursor-pointer">🐛 Raw Session Data (Dev Only)</summary>
+                <div className="mt-2 max-h-40 overflow-y-auto">
+                  <pre className="text-xs text-gray-600">
+                    {JSON.stringify(
+                      sessionHistory.slice(0, 3).map(s => ({
+                        id: s.id.slice(-8),
+                        moduleId: s.moduleId,
+                        startedAt: s.startedAt,
+                        completedAt: s.completedAt,
+                        isSuccess: s.isSuccess,
+                        currentStep: s.currentStep,
+                        totalTimeSpent: s.totalTimeSpent,
+                        quizCompleted: s.quizState?.isCompleted,
+                        paramChanges: s.practiceState?.parameterChanges?.length,
+                      })), 
+                      null, 
+                      2
+                    )}
+                  </pre>
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
       </div>
 
+      
+
+
+
       {/* Debug Info for Quiz Score Issue */}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
           <h4 className="font-medium text-yellow-800 mb-2">
             Debug Info - Quiz Scores
@@ -731,7 +967,7 @@ const ProfilePage = () => {
             </p>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

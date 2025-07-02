@@ -9,20 +9,34 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for saved user
-    const savedUserId = localStorage.getItem("currentUserId");
+    // Check for saved user - FIX: Use the correct localStorage key
+    const savedUserId = localStorage.getItem("pacesim_currentUserId"); // Changed key to avoid conflicts
+    
     if (savedUserId) {
-      db.read();
-      const user = db.data.users.find((u) => u.id === savedUserId);
-      if (user) {
-        // Update last login
-        user.lastLogin = new Date().toISOString();
-        db.write();
-        setCurrentUser(user);
-      } else {
-        localStorage.removeItem("currentUserId");
+      console.log("🔍 Checking for saved user:", savedUserId);
+      
+      try {
+        db.read();
+        const user = db.data?.users?.find((u) => u.id === savedUserId);
+        
+        if (user) {
+          console.log("✅ Found saved user:", user.name);
+          // Update last login
+          user.lastLogin = new Date().toISOString();
+          db.write();
+          setCurrentUser(user);
+        } else {
+          console.log("❌ Saved user not found in database, clearing localStorage");
+          localStorage.removeItem("pacesim_currentUserId");
+        }
+      } catch (error) {
+        console.error("Error loading saved user:", error);
+        localStorage.removeItem("pacesim_currentUserId");
       }
+    } else {
+      console.log("🆕 No saved user found");
     }
+    
     setIsLoading(false);
   }, []);
 
@@ -34,7 +48,7 @@ export const useAuth = () => {
       db.read();
 
       // Find existing user by email/username
-      const existingUser = db.data.users.find(
+      const existingUser = db.data?.users?.find(
         (u) => u.email === username || u.name === username,
       );
 
@@ -62,7 +76,9 @@ export const useAuth = () => {
       existingUser.lastLogin = new Date().toISOString();
       db.write();
       setCurrentUser(existingUser);
-      localStorage.setItem("currentUserId", existingUser.id);
+      
+      // FIX: Use consistent localStorage key
+      localStorage.setItem("pacesim_currentUserId", existingUser.id);
 
       console.log("✅ Login successful for user:", existingUser.name);
       return { success: true };
@@ -83,7 +99,7 @@ export const useAuth = () => {
       db.read();
 
       // Check if user already exists
-      const existingUser = db.data.users.find(
+      const existingUser = db.data?.users?.find(
         (u) => u.email === username || u.name === username,
       );
       if (existingUser) {
@@ -109,10 +125,12 @@ export const useAuth = () => {
         institution: institution || "Johns Hopkins Hospital",
       };
 
-      db.data.users.push(newUser);
+      db.data!.users.push(newUser);
       db.write();
       setCurrentUser(newUser);
-      localStorage.setItem("currentUserId", newUser.id);
+      
+      // FIX: Use consistent localStorage key
+      localStorage.setItem("pacesim_currentUserId", newUser.id);
 
       console.log("✅ Signup successful for user:", newUser.name);
       return { success: true };
@@ -124,7 +142,8 @@ export const useAuth = () => {
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem("currentUserId");
+    // FIX: Clear the correct localStorage key
+    localStorage.removeItem("pacesim_currentUserId");
   };
 
   return {

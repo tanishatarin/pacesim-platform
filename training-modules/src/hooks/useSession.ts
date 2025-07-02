@@ -320,15 +320,19 @@ export const useSession = (userId?: string) => {
 
   const resumeSession = useCallback(
     (sessionId: string) => {
-      if (!userId) return;
+      if (!userId) {
+        console.warn("❌ Cannot resume session: no userId");
+        return;
+      }
 
       try {
-        console.log("▶️ Resuming session:", sessionId);
+        console.log("▶️ Attempting to resume session:", sessionId);
         db.read();
 
-        const session = db.data!.sessions.find(
+        const session = db.data?.sessions?.find(
           (s) => s.id === sessionId && s.userId === userId,
         );
+        
         if (!session) {
           console.warn("⚠️ Session not found for resume:", sessionId);
           return;
@@ -339,6 +343,15 @@ export const useSession = (userId?: string) => {
           console.warn("⚠️ Cannot resume completed session:", sessionId);
           return;
         }
+
+        console.log("✅ Found session to resume:", {
+          id: sessionId.slice(-8),
+          moduleId: session.moduleId,
+          currentStep: session.currentStep,
+          quizCompleted: session.quizState?.isCompleted,
+          parameterChanges: session.practiceState?.parameterChanges?.length || 0,
+          lastActive: session.lastActiveAt
+        });
 
         // End any other active sessions before resuming
         const otherActiveSessions = db.data!.sessions.filter(
@@ -369,13 +382,17 @@ export const useSession = (userId?: string) => {
         db.data!.sessions[sessionIndex] = updatedSession;
         db.write();
 
+        // Set as current session
         setCurrentSession(updatedSession);
+        
         console.log("✅ Session resumed successfully:", {
-          id: sessionId,
+          id: sessionId.slice(-8),
           moduleId: updatedSession.moduleId,
           currentStep: updatedSession.currentStep,
           quizAnswers: updatedSession.quizState?.answers?.length || 0,
+          hasParameters: !!updatedSession.practiceState?.currentParameters
         });
+        
       } catch (error) {
         console.error("❌ Error resuming session:", error);
       }
@@ -385,7 +402,10 @@ export const useSession = (userId?: string) => {
 
   const getIncompleteSession = useCallback(
     (moduleId: string): Session | null => {
-      if (!userId) return null;
+      if (!userId) {
+        console.log("❌ No userId provided to getIncompleteSession");
+        return null;
+      }
 
       try {
         console.log("🔍 Searching for incomplete sessions for module:", moduleId, "user:", userId);
@@ -393,58 +413,78 @@ export const useSession = (userId?: string) => {
         // Read fresh data from database
         db.read();
         const allSessions = db.data?.sessions || [];
+        
+        console.log("📊 Total sessions in database:", allSessions.length);
+        console.log("📊 Sessions for this user:", allSessions.filter(s => s.userId === userId).length);
 
-        // Only look for incomplete sessions for THIS SPECIFIC MODULE
+        // STRICT criteria: incomplete sessions for THIS SPECIFIC MODULE only
         const incompleteSessions = allSessions.filter(
-          (s) =>
-            s.userId === userId &&
-            s.moduleId === moduleId &&
-            !s.completedAt &&
-            s.isSuccess !== true,
+          (s) => {
+            const matches = s.userId === userId &&
+                          s.moduleId === moduleId &&  // Exact module match
+                          !s.completedAt &&           // Not completed
+                          s.isSuccess !== true;       // Not marked successful
+
+            if (matches) {
+              console.log("✅ Found matching incomplete session:", {
+                id: s.id.slice(-8),
+                moduleId: s.moduleId,
+                startedAt: s.startedAt,
+                currentStep: s.currentStep
+              });
+            }
+            
+            return matches;
+          }
         );
 
-        console.log("📋 Found incomplete sessions for module", moduleId, ":", incompleteSessions.length);
+        console.log("📋 Found", incompleteSessions.length, "incomplete sessions for module", moduleId);
 
         if (incompleteSessions.length > 1) {
-          console.warn("⚠️ Multiple incomplete sessions found for same module! Cleaning up...");
+          console.warn("⚠️ Multiple incomplete sessions found for same module! This shouldn't happen.");
           
           // Keep most recent, end others
           const sorted = incompleteSessions.sort(
-            (a, b) => new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
+            (a, b) => new Date(b.lastActiveAt || b.startedAt).getTime() - 
+                    new Date(a.lastActiveAt || a.startedAt).getTime()
           );
           
           const toKeep = sorted[0];
           const toEnd = sorted.slice(1);
           
+          console.log("🧹 Cleaning up", toEnd.length, "duplicate sessions, keeping:", toKeep.id.slice(-8));
+          
           toEnd.forEach((session) => {
-            const sessionIndex = db.data!.sessions.findIndex((s) => s.id === session.id);
+            const sessionIndex = allSessions.findIndex((s) => s.id === session.id);
             if (sessionIndex !== -1) {
-              db.data!.sessions[sessionIndex] = {
+              allSessions[sessionIndex] = {
                 ...session,
                 completedAt: new Date().toISOString(),
                 isSuccess: false,
               };
             }
           });
-          db.write();
           
+          db.write();
           return toKeep;
         }
 
         if (incompleteSessions.length === 1) {
           const session = incompleteSessions[0];
           console.log("✅ Returning incomplete session:", {
-            id: session.id,
+            id: session.id.slice(-8),
             moduleId: session.moduleId,
             currentStep: session.currentStep,
             quizCompleted: session.quizState?.isCompleted,
             lastActive: session.lastActiveAt,
+            parameterChanges: session.practiceState?.parameterChanges?.length || 0
           });
           return session;
         }
 
         console.log("❌ No incomplete sessions found for module", moduleId);
         return null;
+        
       } catch (error) {
         console.error("❌ Error getting incomplete session:", error);
         return null;
@@ -455,8 +495,20 @@ export const useSession = (userId?: string) => {
 
   const endSessionForNavigation = useCallback(() => {
     if (currentSession && !currentSession.completedAt) {
-      console.log("🚪 User navigating away, ending current session");
+      console.log("🚪 NAVIGATION CLEANUP - Ending current session due to navigation away");
+      console.log("Session details:", {
+        id: currentSession.id.slice(-8),
+        moduleId: currentSession.moduleId,
+        currentStep: currentSession.currentStep,
+        timeSpent: currentSession.totalTimeSpent || 0,
+        quizCompleted: currentSession.quizState?.isCompleted,
+        hasProgress: (currentSession.practiceState?.parameterChanges?.length || 0) > 0
+      });
+      
+      // ❌ THIS IS LIKELY THE PROBLEM - It's ending sessions on navigation
       endSession(currentSession.id, false, 0, 0);
+    } else {
+      console.log("🚪 Navigation cleanup called but no active session to end");
     }
   }, [currentSession, endSession]);
 
