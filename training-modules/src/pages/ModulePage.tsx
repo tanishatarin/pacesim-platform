@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -383,26 +383,71 @@ const ModulePage = () => {
 
   const handleResumeSession = useCallback(() => {
     if (resumeBannerSession) {
-      console.log("▶️ Resuming session from banner:", resumeBannerSession.id);
+      console.log("▶️ RESUMING session:", resumeBannerSession.id.slice(-8));
+      
+      // Resume the session
       resumeSession(resumeBannerSession.id);
       setResumeBannerSession(null);
+      
+      // The session state will be restored by the step controller
+      console.log("✅ Session resumed - state will be restored");
     }
   }, [resumeBannerSession, resumeSession]);
 
   const handleDiscardSession = useCallback(() => {
     if (resumeBannerSession) {
-      console.log("🗑️ Discarding session from banner:", resumeBannerSession.id);
+      console.log("🗑️ DISCARDING session and starting fresh:", resumeBannerSession.id.slice(-8));
+      
+      // End the old session
       endSession(resumeBannerSession.id, false, 0, 0);
       setResumeBannerSession(null);
-      if (currentModule) {
-        setPacemakerParams(currentModule.initialParams);
-      }
+      
+      // Force page reset
+      setIsPageReady(false);
+      setQuizCompleted(false);
+      setQuizPassed(false);
+      setQuizScore({ score: 0, total: 0 });
+      
+      setTimeout(() => {
+        // Start completely fresh session
+        if (currentModule && moduleId) {
+          console.log("🚀 Starting FRESH session after discard for module:", moduleId);
+          const sessionId = startSession(moduleId, currentModule.title);
+          setPacemakerParams(currentModule.initialParams);
+          console.log("✅ Fresh session created after discard:", sessionId);
+        }
+        setIsPageReady(true);
+      }, 100);
     }
-  }, [resumeBannerSession, endSession, currentModule]);
+  }, [resumeBannerSession, endSession, currentModule, moduleId, startSession]);
+
+
+  // const handleQuizComplete = useCallback(
+  //   (passed: boolean, score: number, totalQuestions: number) => {
+  //     console.log("🎉 Quiz completed:", { passed, score, totalQuestions });
+  //     setQuizCompleted(true);
+  //     setQuizPassed(passed);
+  //     setQuizScore({ score, total: totalQuestions });
+
+  //     if (currentSession) {
+  //       updateSession(currentSession.id, {
+  //         currentStep: "practice",
+  //         quizState: {
+  //           ...currentSession.quizState,
+  //           isCompleted: true,
+  //           score,
+  //           totalQuestions,
+  //         },
+  //       });
+  //     }
+  //   },
+  //   [currentSession, updateSession],
+  // );
 
   const handleQuizComplete = useCallback(
     (passed: boolean, score: number, totalQuestions: number) => {
-      console.log("🎉 Quiz completed:", { passed, score, totalQuestions });
+      console.log("🎉 Quiz completed - FRESH START for steps:", { passed, score, totalQuestions });
+      
       setQuizCompleted(true);
       setQuizPassed(passed);
       setQuizScore({ score, total: totalQuestions });
@@ -418,6 +463,8 @@ const ModulePage = () => {
           },
         });
       }
+      
+      // Steps will auto-reset due to the new step controller logic
     },
     [currentSession, updateSession],
   );
@@ -472,10 +519,15 @@ const ModulePage = () => {
   );
 
   const handleTryAgain = useCallback(() => {
+    console.log("🔄 TRY AGAIN - forcing complete reset");
+    
+    // End current session completely
     if (currentSession) {
+      console.log("🗑️ Ending current session:", currentSession.id.slice(-8));
       endSession(currentSession.id, false, 0, 0);
     }
 
+    // Clear ALL state completely
     setShowCompletion(false);
     setQuizCompleted(false);
     setQuizPassed(false);
@@ -483,14 +535,33 @@ const ModulePage = () => {
     setResumeBannerSession(null);
     setIsSuccess(false);
 
+    // Reset parameters to module initial state
     if (currentModule) {
+      console.log("🔄 Resetting to initial params:", currentModule.initialParams);
       setPacemakerParams(currentModule.initialParams);
     }
 
     setSensorStates({ left: false, right: false });
+    
+    // Force page reinitialize
     setIsPageReady(false);
-    setTimeout(() => setIsPageReady(true), 100);
-  }, [currentSession, endSession, currentModule]);
+    
+    setTimeout(() => {
+      // Start completely fresh session
+      if (moduleId && currentModule) {
+        console.log("🚀 Starting FRESH session for module:", moduleId);
+        const sessionId = startSession(moduleId, currentModule.title);
+        console.log("✅ Fresh session created:", sessionId);
+      }
+      setIsPageReady(true);
+    }, 100);
+  }, [currentSession, endSession, currentModule, moduleId, startSession]);
+
+
+  useEffect(() => {
+    // When moduleId changes, clear any resume banner for previous module
+    setResumeBannerSession(null);
+  }, [moduleId]);
 
   const getHint = useCallback(() => {
     const generalHints: Record<string, string> = {
@@ -531,13 +602,24 @@ const ModulePage = () => {
   }, [isConnected, connectionMode, fallbackParams]);
 
   // ============ STEP CONTROLLER - ALWAYS CALLED ============
-  const stepControllerProps = {
-    moduleId: moduleId || "1",
-    currentParams: pacemakerParams,
-    isQuizCompleted: quizCompleted,
-    currentSession,
-    updateStepProgress: handleStepProgressUpdate,
-  };
+  const stepControllerProps = useMemo(() => {
+    const props = {
+      moduleId: moduleId || "1",
+      currentParams: pacemakerParams,
+      isQuizCompleted: quizCompleted,
+      currentSession,
+      updateStepProgress: handleStepProgressUpdate,
+    };
+    
+    console.log("🔧 Step controller props:", {
+      moduleId: props.moduleId,
+      sessionId: currentSession?.id?.slice(-8) || 'none',
+      isQuizCompleted: quizCompleted,
+      paramsRate: pacemakerParams.rate
+    });
+    
+    return props;
+  }, [moduleId, pacemakerParams, quizCompleted, currentSession?.id, handleStepProgressUpdate]);
 
   const {
     steps,
@@ -552,74 +634,47 @@ const ModulePage = () => {
   } = useStepController(stepControllerProps);
 
   // ============ ALL EFFECTS ============
-  // FIXED: Main initialization effect
+  // Main initialization effect
   useEffect(() => {
     if (!currentUser || !moduleId || !currentModule) {
-      console.log("❌ Missing requirements for initialization:", { 
-        hasUser: !!currentUser, 
-        hasModuleId: !!moduleId, 
-        hasModule: !!currentModule 
-      });
       setIsPageReady(false);
       return;
     }
 
     const initializeModule = async () => {
-      console.log("🎬 Starting module initialization for:", moduleId);
+      console.log("🎬 Initializing module:", moduleId);
       
       try {
-        // FIRST: Check for incomplete session for THIS SPECIFIC MODULE
+        // Check for incomplete session
         const incompleteSession = getIncompleteSession(moduleId);
         
         if (incompleteSession) {
-          console.log("📋 Found incomplete session for module", moduleId, ":", {
-            id: incompleteSession.id,
-            currentStep: incompleteSession.currentStep,
-            quizCompleted: incompleteSession.quizState?.isCompleted,
-            lastActive: incompleteSession.lastActiveAt
-          });
-          
-          // Auto-resume the session
-          console.log("▶️ Auto-resuming existing session");
-          resumeSession(incompleteSession.id);
-          
-          // Don't reset parameters - they'll be restored from session
-          setResumeBannerSession(null); // Don't show banner for auto-resume
-          
+          console.log("📋 Found incomplete session - showing resume banner");
+          setResumeBannerSession(incompleteSession);
+          // Don't auto-resume, let user choose
         } else {
-          console.log("🆕 No incomplete session for module", moduleId, "- starting fresh");
+          console.log("🆕 No incomplete session - starting fresh");
           
-          // ONLY start new session if no incomplete one exists
-          if (!currentSession) {
-            const sessionId = startSession(moduleId, currentModule.title);
-            console.log("🚀 Started new session:", sessionId);
-          }
+          // Always start fresh session
+          const sessionId = startSession(moduleId, currentModule.title);
+          console.log("🚀 Started fresh session:", sessionId);
           
-          // Reset to initial parameters for fresh start
-          console.log("🔄 Setting initial parameters:", currentModule.initialParams);
+          // Reset to initial parameters
           setPacemakerParams(currentModule.initialParams);
           setResumeBannerSession(null);
         }
         
       } catch (error) {
         console.error("❌ Error during initialization:", error);
-        // Fallback to fresh start with null checks
-        if (currentModule?.initialParams) {
-          console.log("🔄 Falling back to fresh start");
-          setPacemakerParams(currentModule.initialParams);
-        }
+        setPacemakerParams(currentModule.initialParams);
       } finally {
         setIsPageReady(true);
       }
     };
 
     initializeModule();
-  }, [
-    currentUser?.id,  
-    moduleId,         
-    currentModule?.title // Use title instead of non-existent id
-    // Removed dependencies that cause loops
-  ]);
+  }, [currentUser?.id, moduleId, currentModule?.title]);
+
 
   // FIXED: Separate effect for restoring session state AFTER page is ready
   useEffect(() => {
@@ -676,7 +731,7 @@ const ModulePage = () => {
     return () => {
       console.log("📍 ModulePage unmounting for module:", moduleId);
       // DON'T automatically end sessions on navigation
-      // Let them persist until explicitly ended
+      // Let them persist until explicitly ended by user action
     };
   }, [moduleId]);
 
@@ -792,6 +847,25 @@ const ModulePage = () => {
       return () => clearTimeout(timer);
     }
   }, [quizCompleted, currentSession?.currentStep]);
+
+  // force resets when module changes:
+  useEffect(() => {
+    console.log("🔄 Module changed - clearing all state");
+    setResumeBannerSession(null);
+    setQuizCompleted(false);
+    setQuizPassed(false);
+    setQuizScore({ score: 0, total: 0 });
+    setShowCompletion(false);
+    setIsSuccess(false);
+  }, [moduleId]);
+
+  // force step controller reset on new sessions:
+  useEffect(() => {
+    if (currentSession?.id) {
+      console.log("🔄 New session detected for step controller:", currentSession.id.slice(-8));
+    }
+  }, [currentSession?.id]);
+
 
   // ============ COMPUTED VALUES FOR RENDER ============
   const connectionStatus = getConnectionStatusDisplay();
@@ -954,6 +1028,7 @@ const ModulePage = () => {
             {/* Step Progress Component - Show after quiz completion */}
             {quizCompleted && steps.length > 0 && stepControllerInitialized && (
               <StepProgress
+                key={currentSession?.id} // ✅ Force reset on new session
                 steps={steps}
                 currentStepIndex={currentStepIndex}
                 completedSteps={completedSteps}
