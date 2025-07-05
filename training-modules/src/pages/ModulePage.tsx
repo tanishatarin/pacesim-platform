@@ -218,10 +218,10 @@ const ModulePage = () => {
   });
   const [pacemakerParams, setPacemakerParams] = useState(() => {
     return {
-      rate: 60,
-      aOutput: 5,
-      vOutput: 5,
-      aSensitivity: 2,
+      rate: 40,
+      aOutput: 2, 
+      vOutput: 3,
+      aSensitivity: 1,
       vSensitivity: 2,
     };
   });
@@ -500,13 +500,15 @@ const ModulePage = () => {
         [param]: value,
       }));
 
+      console.log(`🔧 Parameter changed: ${param} from ${oldValue} to ${value}`);
+
       handleParameterChange(param, oldValue, value);
 
       if (isConnected) {
         const paramMap: Record<string, string> = {
           'aOutput': 'a_output',
-          'vOutput': 'v_output',
-          'aSensitivity': 'aSensitivity', 
+          'vOutput': 'v_output', 
+          'aSensitivity': 'aSensitivity',
           'vSensitivity': 'vSensitivity',
           'rate': 'rate'
         };
@@ -735,50 +737,51 @@ const ModulePage = () => {
     };
   }, [moduleId]);
 
-  useEffect(() => {
-    if (isConnected && pacemakerState) {
-      const newParams = {
-        rate: pacemakerState.rate,
-        aOutput: pacemakerState.a_output,
-        vOutput: pacemakerState.v_output,
-        aSensitivity: pacemakerState.aSensitivity,
-        vSensitivity: pacemakerState.vSensitivity,
-      };
+  // useEffect(() => {
+  //   if (isConnected && pacemakerState) {
+  //     const newParams = {
+  //       rate: pacemakerState.rate,
+  //       aOutput: pacemakerState.a_output,
+  //       vOutput: pacemakerState.v_output,
+  //       aSensitivity: pacemakerState.aSensitivity,
+  //       vSensitivity: pacemakerState.vSensitivity,
+  //     };
 
-      if (overrideOnReconnect.current) {
-        overrideOnReconnect.current = false;
-        console.log("🛑 Skipping param overwrite after reconnect");
-        return;
-      }
+  //     if (overrideOnReconnect.current) {
+  //       overrideOnReconnect.current = false;
+  //       console.log("🛑 Skipping param overwrite after reconnect");
+  //       return;
+  //     }
 
-      setPacemakerParams((prev) => {
-        const isSame = Object.keys(newParams).every(
-          key => prev[key as keyof typeof prev] === newParams[key as keyof typeof newParams]
-        );
-        return isSame ? prev : newParams;
-      });
+  //     setPacemakerParams((prev) => {
+  //       const isSame = Object.keys(newParams).every(
+  //         key => prev[key as keyof typeof prev] === newParams[key as keyof typeof newParams]
+  //       );
+  //       return isSame ? prev : newParams;
+  //     });
 
-      setFallbackParams(newParams);
-    }
-    else if (!isConnected && connectionMode === "simulated" && lastKnownState && !fallbackParams) {
-      const fallbackValues = {
-        rate: lastKnownState.rate,
-        aOutput: lastKnownState.a_output,
-        vOutput: lastKnownState.v_output,
-        aSensitivity: lastKnownState.aSensitivity,
-        vSensitivity: lastKnownState.vSensitivity,
-      };
+  //     setFallbackParams(newParams);
+  //   }
+  //   else if (!isConnected && connectionMode === "simulated" && lastKnownState && !fallbackParams) {
+  //     const fallbackValues = {
+  //       rate: lastKnownState.rate,
+  //       aOutput: lastKnownState.a_output,
+  //       vOutput: lastKnownState.v_output,
+  //       aSensitivity: lastKnownState.aSensitivity,
+  //       vSensitivity: lastKnownState.vSensitivity,
+  //     };
 
-      setPacemakerParams(fallbackValues);
-      setFallbackParams(fallbackValues);
-    }
-  }, [pacemakerState, isConnected, connectionMode, lastKnownState, fallbackParams]);
+  //     setPacemakerParams(fallbackValues);
+  //     setFallbackParams(fallbackValues);
+  //   }
+  // }, [pacemakerState, isConnected, connectionMode, lastKnownState, fallbackParams]);
 
   useEffect(() => {
     if (!currentModule) return;
 
-    const leftShouldFlash = displayAOutput > 0 && pacemakerParams.aSensitivity > 0;
-    const rightShouldFlash = displayVOutput > 0 && pacemakerParams.vSensitivity > 0;
+    // ✅ Use pacemakerParams directly, not display* values
+    const leftShouldFlash = pacemakerParams.aOutput > 0 && pacemakerParams.aSensitivity > 0;
+    const rightShouldFlash = pacemakerParams.vOutput > 0 && pacemakerParams.vSensitivity > 0;
     
     const stepFlashingSensor = getFlashingSensor();
     
@@ -825,8 +828,8 @@ const ModulePage = () => {
     });
   }, [
     currentModule,
-    displayAOutput,
-    displayVOutput,
+    pacemakerParams.aOutput,    // ✅ Changed from displayAOutput
+    pacemakerParams.vOutput,    // ✅ Changed from displayVOutput
     pacemakerParams.aSensitivity,
     pacemakerParams.vSensitivity,
     getFlashingSensor,
@@ -1042,11 +1045,10 @@ const ModulePage = () => {
             <div className="space-y-2">
               <h3 className="font-bold text-lg">ECG Monitor</h3>
               <ECGVisualizer
-                rate={displayRate}
-                aOutput={displayAOutput}
-                vOutput={displayVOutput}
-                sensitivity={pacemakerParams.aSensitivity} 
-                //todo - shoud sensitivity not be a or v depenfding on which
+                rate={pacemakerParams.rate}
+                aOutput={pacemakerParams.aOutput}
+                vOutput={pacemakerParams.vOutput}
+                sensitivity={pacemakerParams.aSensitivity}
                 mode={currentModule.mode}
               />
             </div>
@@ -1064,15 +1066,15 @@ const ModulePage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                   <div className="bg-white rounded-lg p-2">
                     <div className="text-gray-500">Rate</div>
-                    <div className="font-mono text-lg">{displayRate} BPM</div>
+                    <div className="font-mono text-lg">{pacemakerParams.rate} BPM</div>
                   </div>
                   <div className="bg-white rounded-lg p-2">
                     <div className="text-gray-500">A Output</div>
-                    <div className="font-mono text-lg">{displayAOutput} mA</div>
+                    <div className="font-mono text-lg">{pacemakerParams.aOutput} mA</div>
                   </div>
                   <div className="bg-white rounded-lg p-2">
                     <div className="text-gray-500">V Output</div>
-                    <div className="font-mono text-lg">{displayVOutput} mA</div>
+                    <div className="font-mono text-lg">{pacemakerParams.vOutput} mA</div>
                   </div>
                   <div className="bg-white rounded-lg p-2">
                     <div className="text-gray-500">A Sensitivity</div>
@@ -1350,12 +1352,12 @@ const ModulePage = () => {
             <div className="bg-[#F0F6FE] rounded-xl p-4">
               <h3 className="mb-2 font-bold">Pacemaker Rate</h3>
               <div className="text-center">
-                <span className="text-4xl font-mono text-gray-700">{displayRate}</span>
+                <span className="text-4xl font-mono text-gray-700">{pacemakerParams.rate}</span>
                 <span className="text-lg text-gray-500 ml-1">BPM</span>
               </div>
               <p className="text-xs text-gray-500 text-center mt-1">
                 {isConnected && connectionMode === 'pacemaker' ? 'Live from device' : 
-                 fallbackParams ? 'Last known value' : 'Device setting'}
+                fallbackParams ? 'Last known value' : 'Device setting'}
               </p>
             </div>
 
