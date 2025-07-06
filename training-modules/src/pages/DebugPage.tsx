@@ -524,8 +524,8 @@
 
 // // Or add a debug link in your Layout component for easy access:
 // {process.env.NODE_ENV === 'development' && (
-//   <Link 
-//     to="/debug" 
+//   <Link
+//     to="/debug"
 //     className="text-xs text-red-600 hover:text-red-800"
 //     title="Developer Debug Panel"
 //   >
@@ -534,15 +534,7 @@
 // )}
 // */
 
-
-
-
-
-// july 2 debug 
-
-
-
-
+// july 2 debug
 
 // src/pages/DebugPage.tsx
 import { useState, useEffect } from "react";
@@ -568,7 +560,10 @@ const DebugPage = () => {
   const [moduleProgress, setModuleProgress] = useState<ModuleProgress[]>([]);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState(false);
-  const [loginStatus, setLoginStatus] = useState<{type: 'success' | 'error' | null, message: string}>({type: null, message: ''});
+  const [loginStatus, setLoginStatus] = useState<{
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
 
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -580,13 +575,13 @@ const DebugPage = () => {
     const loadedUsers = db.data?.users || [];
     const loadedSessions = db.data?.sessions || [];
     const loadedProgress = db.data?.moduleProgress || [];
-    
+
     console.log("📊 Debug: Loaded data:", {
       users: loadedUsers.length,
       sessions: loadedSessions.length,
-      progress: loadedProgress.length
+      progress: loadedProgress.length,
     });
-    
+
     setUsers(loadedUsers);
     setSessions(loadedSessions);
     setModuleProgress(loadedProgress);
@@ -604,62 +599,73 @@ const DebugPage = () => {
   // FIXED: Quick login function
   const handleQuickLogin = async (user: UserType) => {
     try {
-      console.log("🔐 Debug: Attempting quick login for user:", user.name, user.id);
-      
+      console.log(
+        "🔐 Debug: Attempting quick login for user:",
+        user.name,
+        user.id,
+      );
+
       // Clear any existing auth data first
       localStorage.removeItem("pacesim_currentUserId");
       localStorage.removeItem("pacesim_auth"); // Remove old key if it exists
-      
+
       // Set the correct localStorage key that useAuth expects
       localStorage.setItem("pacesim_currentUserId", user.id);
-      
+
       // Update the user's last login time in database
       db.read();
-      const userIndex = db.data!.users.findIndex(u => u.id === user.id);
+      const userIndex = db.data!.users.findIndex((u) => u.id === user.id);
       if (userIndex !== -1) {
         db.data!.users[userIndex].lastLogin = new Date().toISOString();
         db.write();
       }
-      
+
       setLoginStatus({
-        type: 'success',
-        message: `Successfully logged in as ${user.name}. Redirecting...`
+        type: "success",
+        message: `Successfully logged in as ${user.name}. Redirecting...`,
       });
-      
+
       // Force page reload to trigger auth state update
       setTimeout(() => {
         console.log("🔄 Debug: Reloading page to apply login...");
         window.location.reload();
       }, 1000);
-      
     } catch (error) {
       console.error("❌ Debug: Quick login failed:", error);
       setLoginStatus({
-        type: 'error',
-        message: `Failed to log in as ${user.name}: ${error}`
+        type: "error",
+        message: `Failed to log in as ${user.name}: ${error}`,
       });
     }
   };
 
   // Enhanced delete user function
   const handleDeleteUser = (userId: string) => {
-    const userToDelete = users.find(u => u.id === userId);
+    const userToDelete = users.find((u) => u.id === userId);
     if (!userToDelete) return;
-    
-    if (!confirm(`Delete user "${userToDelete.name}" and ALL their data? This cannot be undone!`)) {
+
+    if (
+      !confirm(
+        `Delete user "${userToDelete.name}" and ALL their data? This cannot be undone!`,
+      )
+    ) {
       return;
     }
 
     try {
       console.log("🗑️ Debug: Deleting user and all data:", userToDelete.name);
-      
+
       db.read();
 
       // Count data before deletion
-      const userSessions = db.data!.sessions.filter(s => s.userId === userId);
-      const userProgress = db.data!.moduleProgress.filter(p => p.userId === userId);
-      
-      console.log(`📊 Debug: Deleting ${userSessions.length} sessions and ${userProgress.length} progress records`);
+      const userSessions = db.data!.sessions.filter((s) => s.userId === userId);
+      const userProgress = db.data!.moduleProgress.filter(
+        (p) => p.userId === userId,
+      );
+
+      console.log(
+        `📊 Debug: Deleting ${userSessions.length} sessions and ${userProgress.length} progress records`,
+      );
 
       // Remove user
       db.data!.users = db.data!.users.filter((u) => u.id !== userId);
@@ -676,8 +682,8 @@ const DebugPage = () => {
       loadData(); // Refresh the display
 
       setLoginStatus({
-        type: 'success',
-        message: `Successfully deleted user "${userToDelete.name}" and all associated data.`
+        type: "success",
+        message: `Successfully deleted user "${userToDelete.name}" and all associated data.`,
       });
 
       // If we deleted the current user, log out
@@ -688,8 +694,8 @@ const DebugPage = () => {
     } catch (error) {
       console.error("❌ Debug: Delete user failed:", error);
       setLoginStatus({
-        type: 'error',
-        message: `Failed to delete user: ${error}`
+        type: "error",
+        message: `Failed to delete user: ${error}`,
       });
     }
   };
@@ -707,7 +713,7 @@ const DebugPage = () => {
           totalUsers: users.length,
           totalSessions: sessions.length,
           totalProgress: moduleProgress.length,
-        }
+        },
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -721,16 +727,16 @@ const DebugPage = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       setLoginStatus({
-        type: 'success',
-        message: 'Data exported successfully!'
+        type: "success",
+        message: "Data exported successfully!",
       });
     } catch (error) {
       console.error("❌ Debug: Export failed:", error);
       setLoginStatus({
-        type: 'error',
-        message: `Export failed: ${error}`
+        type: "error",
+        message: `Export failed: ${error}`,
       });
     }
   };
@@ -747,16 +753,16 @@ const DebugPage = () => {
 
     try {
       console.log("🧨 Debug: Clearing ALL database data...");
-      
+
       db.data = { users: [], sessions: [], moduleProgress: [] };
       db.write();
       loadData();
-      
+
       setLoginStatus({
-        type: 'success',
-        message: 'All data cleared successfully. Logging out...'
+        type: "success",
+        message: "All data cleared successfully. Logging out...",
       });
-      
+
       // Force logout and redirect
       setTimeout(() => {
         logout();
@@ -765,8 +771,8 @@ const DebugPage = () => {
     } catch (error) {
       console.error("❌ Debug: Clear all data failed:", error);
       setLoginStatus({
-        type: 'error',
-        message: `Failed to clear data: ${error}`
+        type: "error",
+        message: `Failed to clear data: ${error}`,
       });
     }
   };
@@ -775,9 +781,11 @@ const DebugPage = () => {
   const getUserStats = (userId: string) => {
     const userSessions = sessions.filter((s) => s.userId === userId);
     const userProgress = moduleProgress.filter((p) => p.userId === userId);
-    
+
     // Filter meaningful sessions
-    const meaningfulSessions = userSessions.filter(s => s.totalTimeSpent && s.totalTimeSpent > 10);
+    const meaningfulSessions = userSessions.filter(
+      (s) => s.totalTimeSpent && s.totalTimeSpent > 10,
+    );
 
     return {
       totalSessions: userSessions.length,
@@ -796,7 +804,9 @@ const DebugPage = () => {
         meaningfulSessions.length > 0
           ? new Date(
               Math.max(
-                ...meaningfulSessions.map((s) => new Date(s.lastActiveAt).getTime()),
+                ...meaningfulSessions.map((s) =>
+                  new Date(s.lastActiveAt).getTime(),
+                ),
               ),
             )
           : null,
@@ -823,7 +833,7 @@ const DebugPage = () => {
   useEffect(() => {
     if (loginStatus.type) {
       const timer = setTimeout(() => {
-        setLoginStatus({type: null, message: ''});
+        setLoginStatus({ type: null, message: "" });
       }, 5000);
       return () => clearTimeout(timer);
     }
@@ -852,13 +862,15 @@ const DebugPage = () => {
 
       {/* Status Messages */}
       {loginStatus.type && (
-        <div className={`p-4 rounded-lg border ${
-          loginStatus.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
+        <div
+          className={`p-4 rounded-lg border ${
+            loginStatus.type === "success"
+              ? "bg-green-50 border-green-200 text-green-800"
+              : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
           <div className="flex items-center space-x-2">
-            {loginStatus.type === 'success' ? (
+            {loginStatus.type === "success" ? (
               <CheckCircle className="w-5 h-5" />
             ) : (
               <AlertTriangle className="w-5 h-5" />
@@ -917,7 +929,8 @@ const DebugPage = () => {
             {currentUser.id}
           </div>
           <div className="text-xs text-blue-600 mt-1">
-            localStorage key: "pacesim_currentUserId" = "{localStorage.getItem("pacesim_currentUserId")}"
+            localStorage key: "pacesim_currentUserId" = "
+            {localStorage.getItem("pacesim_currentUserId")}"
           </div>
         </div>
       )}
@@ -932,7 +945,11 @@ const DebugPage = () => {
           <h3 className="font-medium text-gray-900 mb-2">Total Sessions</h3>
           <p className="text-2xl font-bold text-green-600">{sessions.length}</p>
           <p className="text-xs text-gray-500">
-            {sessions.filter(s => s.totalTimeSpent && s.totalTimeSpent > 10).length} meaningful
+            {
+              sessions.filter((s) => s.totalTimeSpent && s.totalTimeSpent > 10)
+                .length
+            }{" "}
+            meaningful
           </p>
         </div>
         <div className="bg-white shadow-lg rounded-2xl p-4">
@@ -978,7 +995,7 @@ const DebugPage = () => {
               {users.map((user) => {
                 const stats = getUserStats(user.id);
                 const isCurrentUser = currentUser?.id === user.id;
-                
+
                 return (
                   <tr
                     key={user.id}
@@ -986,10 +1003,14 @@ const DebugPage = () => {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          isCurrentUser ? 'bg-blue-200' : 'bg-gray-200'
-                        }`}>
-                          <User className={`w-5 h-5 ${isCurrentUser ? 'text-blue-600' : 'text-gray-600'}`} />
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            isCurrentUser ? "bg-blue-200" : "bg-gray-200"
+                          }`}
+                        >
+                          <User
+                            className={`w-5 h-5 ${isCurrentUser ? "text-blue-600" : "text-gray-600"}`}
+                          />
                         </div>
                         <div>
                           <div className="font-medium text-gray-900 flex items-center">
@@ -1016,13 +1037,15 @@ const DebugPage = () => {
                     <td className="px-6 py-4">
                       <div className="text-sm">
                         <div>
-                          {stats.completedSessions}/{stats.totalSessions} sessions completed
+                          {stats.completedSessions}/{stats.totalSessions}{" "}
+                          sessions completed
                         </div>
                         <div className="text-xs text-gray-500">
                           ({stats.meaningfulSessions} meaningful sessions)
                         </div>
                         <div>
-                          {stats.modulesCompleted}/{stats.modulesStarted} modules completed
+                          {stats.modulesCompleted}/{stats.modulesStarted}{" "}
+                          modules completed
                         </div>
                         <div className="text-gray-500">
                           {formatTime(stats.totalTime)} total time
@@ -1221,9 +1244,19 @@ const DebugPage = () => {
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <h3 className="font-medium text-gray-900 mb-2">Debug Auth Info</h3>
         <div className="text-sm text-gray-600 space-y-1">
-          <div>Current localStorage key: <code>pacesim_currentUserId</code></div>
-          <div>Current value: <code>"{localStorage.getItem("pacesim_currentUserId") || "not set"}"</code></div>
-          <div>Auth hook current user: {currentUser ? `${currentUser.name} (${currentUser.id})` : "null"}</div>
+          <div>
+            Current localStorage key: <code>pacesim_currentUserId</code>
+          </div>
+          <div>
+            Current value:{" "}
+            <code>
+              "{localStorage.getItem("pacesim_currentUserId") || "not set"}"
+            </code>
+          </div>
+          <div>
+            Auth hook current user:{" "}
+            {currentUser ? `${currentUser.name} (${currentUser.id})` : "null"}
+          </div>
           <div>Total users in DB: {users.length}</div>
         </div>
       </div>

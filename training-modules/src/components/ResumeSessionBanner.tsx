@@ -29,9 +29,11 @@ const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
     const diffMinutes = Math.floor((now - then) / (1000 * 60));
 
     if (diffMinutes < 1) return "just now";
-    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
+    if (diffMinutes < 60)
+      return `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays === 1) return "yesterday";
     return `${diffDays} days ago`;
@@ -53,7 +55,9 @@ const ResumeSessionBanner: React.FC<ResumeSessionBannerProps> = ({
         <div className="flex items-center gap-3">
           <Play className="w-5 h-5 text-blue-600" />
           <div>
-            <h3 className="font-medium text-blue-900">Continue Previous Session</h3>
+            <h3 className="font-medium text-blue-900">
+              Continue Previous Session
+            </h3>
             <p className="text-sm text-blue-700">
               {session.moduleName} • {session.currentStep} • Last active{" "}
               {formatTimeAgo(session.lastActiveAt)}

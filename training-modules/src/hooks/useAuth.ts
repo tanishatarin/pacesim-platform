@@ -11,14 +11,14 @@ export const useAuth = () => {
   useEffect(() => {
     // Check for saved user - FIX: Use the correct localStorage key
     const savedUserId = localStorage.getItem("pacesim_currentUserId"); // Changed key to avoid conflicts
-    
+
     if (savedUserId) {
       console.log("🔍 Checking for saved user:", savedUserId);
-      
+
       try {
         db.read();
         const user = db.data?.users?.find((u) => u.id === savedUserId);
-        
+
         if (user) {
           console.log("✅ Found saved user:", user.name);
           // Update last login
@@ -26,7 +26,9 @@ export const useAuth = () => {
           db.write();
           setCurrentUser(user);
         } else {
-          console.log("❌ Saved user not found in database, clearing localStorage");
+          console.log(
+            "❌ Saved user not found in database, clearing localStorage",
+          );
           localStorage.removeItem("pacesim_currentUserId");
         }
       } catch (error) {
@@ -36,7 +38,7 @@ export const useAuth = () => {
     } else {
       console.log("🆕 No saved user found");
     }
-    
+
     setIsLoading(false);
   }, []);
 
@@ -76,7 +78,7 @@ export const useAuth = () => {
       existingUser.lastLogin = new Date().toISOString();
       db.write();
       setCurrentUser(existingUser);
-      
+
       // FIX: Use consistent localStorage key
       localStorage.setItem("pacesim_currentUserId", existingUser.id);
 
@@ -128,7 +130,7 @@ export const useAuth = () => {
       db.data!.users.push(newUser);
       db.write();
       setCurrentUser(newUser);
-      
+
       // FIX: Use consistent localStorage key
       localStorage.setItem("pacesim_currentUserId", newUser.id);
 

@@ -576,18 +576,7 @@
 
 // export default Dashboard;
 
-
-
-
-
-
-
-
-
-
-
-
-// july 2 3pm trying to fix with new db updates 
+// july 2 3pm trying to fix with new db updates
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -704,7 +693,7 @@ const Dashboard = () => {
     if (!currentUser?.id) return;
 
     console.log("🔍 Dashboard: Loading data for user:", currentUser.id);
-    
+
     // Load real data from database
     db.read();
     const userProgress =
@@ -717,52 +706,58 @@ const Dashboard = () => {
 
     // Filter meaningful sessions (not empty/broken ones)
     const meaningfulSessions = userSessions.filter(
-      (s) => s.totalTimeSpent && s.totalTimeSpent > 10 // At least 10 seconds
+      (s) => s.totalTimeSpent && s.totalTimeSpent > 10, // At least 10 seconds
     );
 
-    console.log("📊 Dashboard: Meaningful sessions:", meaningfulSessions.length);
+    console.log(
+      "📊 Dashboard: Meaningful sessions:",
+      meaningfulSessions.length,
+    );
 
     setModuleProgress(userProgress);
 
     // Calculate stats from REAL data
     const completedSessions = meaningfulSessions.filter(
-      (s) => s.completedAt && s.isSuccess
+      (s) => s.completedAt && s.isSuccess,
     );
 
     const totalTime = meaningfulSessions.reduce(
       (sum, s) => sum + (s.totalTimeSpent || 0),
-      0
+      0,
     );
 
     // Calculate average quiz score from completed sessions with quiz data
     const sessionsWithQuiz = completedSessions.filter(
-      (s) => s.quizState?.score !== undefined && s.quizState?.totalQuestions
+      (s) => s.quizState?.score !== undefined && s.quizState?.totalQuestions,
     );
-    
-    const averageScore = sessionsWithQuiz.length > 0
-      ? sessionsWithQuiz.reduce(
-          (sum, s) => sum + (s.quizState!.score / s.quizState!.totalQuestions) * 100,
-          0
-        ) / sessionsWithQuiz.length
-      : 0;
+
+    const averageScore =
+      sessionsWithQuiz.length > 0
+        ? sessionsWithQuiz.reduce(
+            (sum, s) =>
+              sum + (s.quizState!.score / s.quizState!.totalQuestions) * 100,
+            0,
+          ) / sessionsWithQuiz.length
+        : 0;
 
     // Get fastest completion time
-    const fastestTime = completedSessions.length > 0
-      ? Math.min(
-          ...completedSessions
-            .map((s) => s.totalTimeSpent || Infinity)
-            .filter((t) => t !== Infinity && t > 0)
-        )
-      : undefined;
+    const fastestTime =
+      completedSessions.length > 0
+        ? Math.min(
+            ...completedSessions
+              .map((s) => s.totalTimeSpent || Infinity)
+              .filter((t) => t !== Infinity && t > 0),
+          )
+        : undefined;
 
     // Calculate current week training time
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const currentWeekSessions = meaningfulSessions.filter(
-      (s) => new Date(s.startedAt).getTime() > oneWeekAgo
+      (s) => new Date(s.startedAt).getTime() > oneWeekAgo,
     );
     const currentWeekTime = currentWeekSessions.reduce(
       (sum, s) => sum + (s.totalTimeSpent || 0),
-      0
+      0,
     );
 
     // Calculate streak (consecutive days with activity)
@@ -770,22 +765,22 @@ const Dashboard = () => {
 
     // Get completed modules count from module progress
     const completedModulesCount = userProgress.filter(
-      (p) => p.status === "completed"
+      (p) => p.status === "completed",
     ).length;
 
     // Calculate success rate
     const totalAttempts = meaningfulSessions.length;
-    const successRate = totalAttempts > 0 
-      ? (completedSessions.length / totalAttempts) * 100 
-      : 0;
+    const successRate =
+      totalAttempts > 0 ? (completedSessions.length / totalAttempts) * 100 : 0;
 
     // Get last session date
-    const lastSession = meaningfulSessions.length > 0
-      ? meaningfulSessions.sort(
-          (a, b) =>
-            new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-        )[0]
-      : null;
+    const lastSession =
+      meaningfulSessions.length > 0
+        ? meaningfulSessions.sort(
+            (a, b) =>
+              new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+          )[0]
+        : null;
 
     console.log("📊 Dashboard: Calculated stats:", {
       totalTime,
@@ -793,7 +788,7 @@ const Dashboard = () => {
       averageScore,
       totalAttempts,
       successRate,
-      streakDays
+      streakDays,
     });
 
     setDashboardStats({
@@ -812,7 +807,7 @@ const Dashboard = () => {
     const recentSessions = meaningfulSessions
       .sort(
         (a, b) =>
-          new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+          new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
       )
       .slice(0, 5);
 
@@ -828,7 +823,7 @@ const Dashboard = () => {
         session.quizState?.score && session.quizState?.totalQuestions
           ? Math.round(
               (session.quizState.score / session.quizState.totalQuestions) *
-                100
+                100,
             )
           : undefined,
       date: new Date(session.startedAt).toLocaleDateString("en-US", {
@@ -866,7 +861,7 @@ const Dashboard = () => {
     for (let i = 0; i < sessionDates.length; i++) {
       const sessionDate = new Date(sessionDates[i]);
       const daysDiff = Math.floor(
-        (currentDate.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24)
+        (currentDate.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       if (daysDiff === streak) {

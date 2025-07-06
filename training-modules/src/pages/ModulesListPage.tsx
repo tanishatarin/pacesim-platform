@@ -517,13 +517,6 @@
 
 // export default ModulesListPage;
 
-
-
-
-
-
-
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -675,7 +668,7 @@ const ModulesListPage = () => {
 
       // Filter to meaningful sessions only for time/score calculations
       const meaningfulSessions = allModuleSessions.filter(
-        (s) => s.totalTimeSpent && s.totalTimeSpent > 10 // At least 10 seconds
+        (s) => s.totalTimeSpent && s.totalTimeSpent > 10, // At least 10 seconds
       );
 
       // Get completed sessions for this module
@@ -683,7 +676,9 @@ const ModulesListPage = () => {
         (s) => s.completedAt && s.isSuccess,
       );
 
-      console.log(`📊 Module ${moduleId}: ${allModuleSessions.length} total, ${meaningfulSessions.length} meaningful, ${completedSessions.length} completed`);
+      console.log(
+        `📊 Module ${moduleId}: ${allModuleSessions.length} total, ${meaningfulSessions.length} meaningful, ${completedSessions.length} completed`,
+      );
 
       // Calculate fastest time from completed sessions
       const fastestTime =
@@ -699,7 +694,7 @@ const ModulesListPage = () => {
       const sessionsWithQuiz = completedSessions.filter(
         (s) => s.quizState?.score !== undefined && s.quizState?.totalQuestions,
       );
-      
+
       const averageScore =
         sessionsWithQuiz.length > 0
           ? sessionsWithQuiz.reduce(
@@ -716,9 +711,10 @@ const ModulesListPage = () => {
       );
 
       // Calculate success rate
-      const successRate = meaningfulSessions.length > 0
-        ? (completedSessions.length / meaningfulSessions.length) * 100
-        : 0;
+      const successRate =
+        meaningfulSessions.length > 0
+          ? (completedSessions.length / meaningfulSessions.length) * 100
+          : 0;
 
       // Get most recent meaningful session
       const lastSession =
@@ -818,7 +814,7 @@ const ModulesListPage = () => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     }

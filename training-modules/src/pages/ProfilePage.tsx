@@ -766,14 +766,14 @@
 //                   const isVeryShort = session.totalTimeSpent && session.totalTimeSpent < 30;
 //                   const hasQuizProgress = session.quizState?.answers?.length > 0;
 //                   const hasParameterChanges = session.practiceState?.parameterChanges?.length > 0;
-                  
+
 //                   return (
 //                     <div
 //                       key={session.id}
 //                       className={`border rounded-lg p-4 ${
-//                         isIncomplete 
-//                           ? 'border-yellow-300 bg-yellow-50' 
-//                           : session.isSuccess 
+//                         isIncomplete
+//                           ? 'border-yellow-300 bg-yellow-50'
+//                           : session.isSuccess
 //                           ? 'border-green-300 bg-green-50'
 //                           : 'border-red-300 bg-red-50'
 //                       }`}
@@ -781,9 +781,9 @@
 //                       <div className="flex items-center justify-between mb-2">
 //                         <div className="flex items-center space-x-3">
 //                           <div className={`w-3 h-3 rounded-full ${
-//                             isIncomplete 
-//                               ? 'bg-yellow-500' 
-//                               : session.isSuccess 
+//                             isIncomplete
+//                               ? 'bg-yellow-500'
+//                               : session.isSuccess
 //                               ? 'bg-green-500'
 //                               : 'bg-red-500'
 //                           }`} />
@@ -800,13 +800,13 @@
 //                             </div>
 //                           </div>
 //                         </div>
-                        
+
 //                         <div className="text-right">
 //                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
 //                             isIncomplete
 //                               ? "bg-yellow-100 text-yellow-800"
 //                               : session.isSuccess
-//                               ? "bg-green-100 text-green-800" 
+//                               ? "bg-green-100 text-green-800"
 //                               : "bg-red-100 text-red-800"
 //                           }`}>
 //                             {isIncomplete ? "🔄 INCOMPLETE" : session.isSuccess ? "✅ Success" : "❌ Failed"}
@@ -823,12 +823,12 @@
 //                             {isVeryShort && " ⚠️"}
 //                           </div>
 //                         </div>
-                        
+
 //                         <div className="p-2 bg-white rounded">
 //                           <div className="text-gray-500">Current Step</div>
 //                           <div className="font-medium text-gray-900">{session.currentStep}</div>
 //                         </div>
-                        
+
 //                         <div className={`p-2 rounded ${hasQuizProgress ? 'bg-blue-100' : 'bg-white'}`}>
 //                           <div className="text-gray-500">Quiz Progress</div>
 //                           <div className="font-medium text-gray-900">
@@ -841,7 +841,7 @@
 //                             )}
 //                           </div>
 //                         </div>
-                        
+
 //                         <div className={`p-2 rounded ${hasParameterChanges ? 'bg-green-100' : 'bg-white'}`}>
 //                           <div className="text-gray-500">Parameter Changes</div>
 //                           <div className="font-medium text-gray-900">
@@ -849,7 +849,7 @@
 //                             {hasParameterChanges && " 🔧"}
 //                           </div>
 //                         </div>
-                        
+
 //                         <div className="p-2 bg-white rounded">
 //                           <div className="text-gray-500">Last Active</div>
 //                           <div className="font-medium text-gray-900">
@@ -882,8 +882,8 @@
 //                         <div className="mt-3 p-2 bg-purple-50 rounded text-xs">
 //                           <div className="font-medium text-purple-800">Step Progress:</div>
 //                           <div className="text-purple-700">
-//                             Current: {session.practiceState.stepProgress.currentStepIndex} • 
-//                             Completed: [{session.practiceState.stepProgress.completedSteps.join(', ')}] • 
+//                             Current: {session.practiceState.stepProgress.currentStepIndex} •
+//                             Completed: [{session.practiceState.stepProgress.completedSteps.join(', ')}] •
 //                             All Done: {session.practiceState.stepProgress.allStepsCompleted ? 'Yes' : 'No'}
 //                           </div>
 //                         </div>
@@ -920,8 +920,8 @@
 //                         totalTimeSpent: s.totalTimeSpent,
 //                         quizCompleted: s.quizState?.isCompleted,
 //                         paramChanges: s.practiceState?.parameterChanges?.length,
-//                       })), 
-//                       null, 
+//                       })),
+//                       null,
 //                       2
 //                     )}
 //                   </pre>
@@ -931,10 +931,6 @@
 //           )}
 //         </div>
 //       </div>
-
-      
-
-
 
 //       {/* Debug Info for Quiz Score Issue */}
 //       {/* {process.env.NODE_ENV === "development" && (
@@ -973,9 +969,6 @@
 // };
 
 // export default ProfilePage;
-
-
-
 
 import { useState, useEffect } from "react";
 import {
@@ -1081,25 +1074,29 @@ const ProfilePage = () => {
       (s) => s.quizState?.score !== undefined && s.quizState?.totalQuestions,
     );
 
-    const averageScore = sessionsWithQuiz.length > 0
-      ? sessionsWithQuiz.reduce(
-          (sum, s) => sum + (s.quizState!.score / s.quizState!.totalQuestions) * 100,
-          0,
-        ) / sessionsWithQuiz.length
-      : 0;
+    const averageScore =
+      sessionsWithQuiz.length > 0
+        ? sessionsWithQuiz.reduce(
+            (sum, s) =>
+              sum + (s.quizState!.score / s.quizState!.totalQuestions) * 100,
+            0,
+          ) / sessionsWithQuiz.length
+        : 0;
 
-    const completionRate = meaningfulSessions.length > 0
-      ? (completedSessions.length / meaningfulSessions.length) * 100
-      : 0;
+    const completionRate =
+      meaningfulSessions.length > 0
+        ? (completedSessions.length / meaningfulSessions.length) * 100
+        : 0;
 
     // Calculate fastest completion
-    const fastestCompletion = completedSessions.length > 0
-      ? Math.min(
-          ...completedSessions
-            .map((s) => s.totalTimeSpent || Infinity)
-            .filter((t) => t !== Infinity && t > 0),
-        )
-      : undefined;
+    const fastestCompletion =
+      completedSessions.length > 0
+        ? Math.min(
+            ...completedSessions
+              .map((s) => s.totalTimeSpent || Infinity)
+              .filter((t) => t !== Infinity && t > 0),
+          )
+        : undefined;
 
     // Calculate current week time
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -1122,7 +1119,8 @@ const ProfilePage = () => {
       completionRate,
       streakDays,
       currentWeekTime,
-      fastestCompletion: fastestCompletion !== Infinity ? fastestCompletion : undefined,
+      fastestCompletion:
+        fastestCompletion !== Infinity ? fastestCompletion : undefined,
     });
 
     // Group sessions by "session attempts" for better visualization
@@ -1782,23 +1780,35 @@ const ProfilePage = () => {
                         </summary>
                         <div className="mt-2 space-y-2">
                           {group.sessions.map((session, index) => (
-                            <div key={session.id} className="flex justify-between items-center py-1 px-3 bg-gray-50 rounded text-xs">
-                              <span>Session {index + 1}: {formatDateTime(session.startedAt)}</span>
+                            <div
+                              key={session.id}
+                              className="flex justify-between items-center py-1 px-3 bg-gray-50 rounded text-xs"
+                            >
+                              <span>
+                                Session {index + 1}:{" "}
+                                {formatDateTime(session.startedAt)}
+                              </span>
                               <div className="flex items-center space-x-2">
-                                <span>{formatDuration(session.totalTimeSpent || 0, true)}</span>
-                                <span className={`px-2 py-1 rounded ${
-                                  session.completedAt && session.isSuccess
-                                    ? 'bg-green-100 text-green-700'
-                                    : session.completedAt
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-yellow-100 text-yellow-700'
-                                }`}>
+                                <span>
+                                  {formatDuration(
+                                    session.totalTimeSpent || 0,
+                                    true,
+                                  )}
+                                </span>
+                                <span
+                                  className={`px-2 py-1 rounded ${
+                                    session.completedAt && session.isSuccess
+                                      ? "bg-green-100 text-green-700"
+                                      : session.completedAt
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-yellow-100 text-yellow-700"
+                                  }`}
+                                >
                                   {session.completedAt && session.isSuccess
-                                    ? 'Completed'
+                                    ? "Completed"
                                     : session.completedAt
-                                    ? 'Ended'
-                                    : 'Incomplete'
-                                  }
+                                      ? "Ended"
+                                      : "Incomplete"}
                                 </span>
                               </div>
                             </div>
@@ -1815,7 +1825,8 @@ const ProfilePage = () => {
               <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No training sessions yet.</p>
               <p className="text-sm text-gray-400 mt-1">
-                Complete your first training module to see your session history here.
+                Complete your first training module to see your session history
+                here.
               </p>
             </div>
           )}
