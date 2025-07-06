@@ -26,6 +26,18 @@ export interface PacemakerInfoItem {
   value: string;
 }
 
+// export interface ModuleStep {
+//   id: string;
+//   objective: string;
+//   allowedControls: string[];
+//   targetValues?: Partial<PacemakerState>;
+//   sensorStates?: {
+//     left: boolean;
+//     right: boolean;
+//   };
+//   flashingSensor?: "left" | "right" | null;
+// }
+
 export interface ModuleStep {
   id: string;
   objective: string;

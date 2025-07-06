@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { CheckCircle } from 'lucide-react';
+import { useEffect } from "react";
+import { CheckCircle } from "lucide-react";
 
 interface StepProgressProps {
   steps: Array<{
@@ -23,7 +23,7 @@ const StepProgress = ({
   completedSteps,
   currentParams,
   onStepComplete,
-  className = ""
+  className = "",
 }: StepProgressProps) => {
   const currentStep = steps[currentStepIndex];
 
@@ -31,23 +31,28 @@ const StepProgress = ({
   const isCurrentStepComplete = () => {
     if (!currentStep?.targetValues) return false;
 
-    return Object.entries(currentStep.targetValues).every(([key, targetValue]) => {
-      const currentValue = currentParams[key];
-      if (typeof targetValue === 'number' && typeof currentValue === 'number') {
-        const tolerance = Math.max(0.1, Math.abs(targetValue) * 0.1);
-        return Math.abs(currentValue - targetValue) <= tolerance;
-      }
-      return currentValue === targetValue;
-    });
+    return Object.entries(currentStep.targetValues).every(
+      ([key, targetValue]) => {
+        const currentValue = currentParams[key];
+        if (
+          typeof targetValue === "number" &&
+          typeof currentValue === "number"
+        ) {
+          const tolerance = Math.max(0.1, Math.abs(targetValue) * 0.1);
+          return Math.abs(currentValue - targetValue) <= tolerance;
+        }
+        return currentValue === targetValue;
+      },
+    );
   };
 
   const stepComplete = isCurrentStepComplete();
 
   // Auto-advance to next step when current is complete - NO DELAY
   useEffect(() => {
-    if (stepComplete && !completedSteps.has(currentStep?.id || '')) {
+    if (stepComplete && !completedSteps.has(currentStep?.id || "")) {
       if (currentStep && onStepComplete) {
-        console.log('🚀 Step complete, advancing immediately');
+        console.log("🚀 Step complete, advancing immediately");
         onStepComplete(currentStep.id);
       }
     }
@@ -55,7 +60,9 @@ const StepProgress = ({
 
   if (!currentStep) {
     return (
-      <div className={`bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 ${className}`}>
+      <div
+        className={`bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 ${className}`}
+      >
         <div className="flex items-center">
           <CheckCircle className="w-6 h-6 text-green-600 mr-3" />
           <div>
@@ -78,22 +85,24 @@ const StepProgress = ({
         <div className="font-bold mb-1 text-gray-700">
           Step {currentStepIndex + 1}: {currentStep.objective}
         </div>
-        
+
         {/* Progress dots */}
         <div className="flex space-x-1">
           {steps.map((step, index) => {
             const isCompleted = completedSteps.has(step.id);
             const isCurrent = index === currentStepIndex;
-            
+
             return (
               <div
                 key={step.id}
                 className={`w-3 h-3 rounded-full ${
                   isCompleted
-                    ? 'bg-green-500'
+                    ? "bg-green-500"
                     : isCurrent
-                    ? stepComplete ? 'bg-green-500' : 'bg-blue-500'
-                    : 'bg-gray-300'
+                      ? stepComplete
+                        ? "bg-green-500"
+                        : "bg-blue-500"
+                      : "bg-gray-300"
                 }`}
               />
             );
@@ -103,10 +112,10 @@ const StepProgress = ({
 
       {/* Current Step Content */}
       <div className="flex items-start justify-between">
-          <p className={`text-sm font-semibold leading-relaxed text-blue-700`}>
-            {currentStep.instruction}
-          </p>
-        
+        <p className={`text-sm font-semibold leading-relaxed text-blue-700`}>
+          {currentStep.instruction}
+        </p>
+
         {stepComplete && (
           <div className="ml-4 flex-shrink-0">
             <CheckCircle className="w-5 h-5 text-green-600" />
