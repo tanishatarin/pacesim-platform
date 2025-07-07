@@ -66,6 +66,7 @@ const Dashboard = () => {
     null,
   );
 
+  // ✅ UPDATED: Only 3 real modules now
   const modules: ModuleData[] = [
     {
       id: 1,
@@ -282,10 +283,8 @@ const Dashboard = () => {
   const getModuleName = (moduleId: string) => {
     const moduleNames: Record<string, string> = {
       "1": "Scenario 1: Bradycardia",
-      "2": "Scenario 2: Oversensing",
-      "3": "Scenario 3: Undersensing",
-      "4": "Capture Calibration",
-      "5": "Failure to Capture",
+      "2": "Scenario 2: Third Degree Block", 
+      "3": "Scenario 3: Atrial Fibrillation",
     };
     return moduleNames[moduleId] || `Module ${moduleId}`;
   };

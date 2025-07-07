@@ -970,6 +970,10 @@
 
 // export default ProfilePage;
 
+
+
+
+
 import { useState, useEffect } from "react";
 import {
   User,
@@ -987,7 +991,6 @@ import {
   ChevronDown,
   ChevronUp,
   Play,
-  Target,
   Zap,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
@@ -1040,24 +1043,35 @@ const ProfilePage = () => {
     currentWeekTime: 0,
   });
 
+  // Define the 3 real modules
+  const REAL_MODULES = {
+    "1": "Scenario 1: Bradycardia Management",
+    "2": "Scenario 2: Third Degree Heart Block", 
+    "3": "Scenario 3: Atrial Fibrillation with Bradycardia"
+  };
+
   useEffect(() => {
     if (!currentUser?.id) return;
 
     console.log("🔍 Profile: Loading data for user:", currentUser.id);
 
-    // Load module progress
+    // Load module progress - filter for real modules only
     db.read();
-    const userModuleProgress =
-      db.data?.moduleProgress?.filter((p) => p.userId === currentUser.id) || [];
+    const userModuleProgress = (db.data?.moduleProgress?.filter(
+      (p) => p.userId === currentUser.id && Object.keys(REAL_MODULES).includes(p.moduleId)
+    ) || []);
     setModuleProgress(userModuleProgress);
 
-    // Filter meaningful sessions (with actual duration)
+    // Filter sessions for real modules only and meaningful sessions (with actual duration)
     const meaningfulSessions = sessionHistory.filter(
-      (session) => session.totalTimeSpent && session.totalTimeSpent > 10, // At least 10 seconds
+      (session) => 
+        Object.keys(REAL_MODULES).includes(session.moduleId) && 
+        session.totalTimeSpent && 
+        session.totalTimeSpent > 10 // At least 10 seconds
     );
 
     console.log("📊 Profile: Total sessions:", sessionHistory.length);
-    console.log("📊 Profile: Meaningful sessions:", meaningfulSessions.length);
+    console.log("📊 Profile: Meaningful sessions for real modules:", meaningfulSessions.length);
 
     // Calculate comprehensive stats
     const completedSessions = meaningfulSessions.filter(
@@ -1285,14 +1299,7 @@ const ProfilePage = () => {
   };
 
   const getModuleName = (moduleId: string) => {
-    const moduleNames: Record<string, string> = {
-      "1": "Scenario 1: Bradycardia",
-      "2": "Scenario 2: Oversensing",
-      "3": "Scenario 3: Undersensing",
-      "4": "Capture Calibration",
-      "5": "Failure to Capture",
-    };
-    return moduleNames[moduleId] || `Module ${moduleId}`;
+    return REAL_MODULES[moduleId as keyof typeof REAL_MODULES] || `Module ${moduleId}`;
   };
 
   const getStatusIcon = (group: SessionGroup) => {
@@ -1344,13 +1351,14 @@ const ProfilePage = () => {
     navigate(`/module/${moduleId}`);
   };
 
-  // Get fastest completion times for all 5 modules
+  // Get fastest completion times for the 3 real modules
   const getFastestCompletions = () => {
-    const moduleIds = ["1", "2", "3", "4", "5"];
+    const moduleIds = Object.keys(REAL_MODULES);
     const fastestTimes: { [moduleId: string]: number } = {};
 
     sessionHistory.forEach((session) => {
-      if (session.completedAt && session.isSuccess && session.totalTimeSpent) {
+      if (session.completedAt && session.isSuccess && session.totalTimeSpent && 
+          Object.keys(REAL_MODULES).includes(session.moduleId)) {
         const moduleId = session.moduleId;
         if (
           !fastestTimes[moduleId] ||
@@ -1592,7 +1600,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Fastest Completion Times */}
+          {/* Fastest Completion Times - Now for 3 modules */}
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex items-center mb-3">
               <Zap className="w-4 h-4 text-green-500 mr-2" />
@@ -1600,7 +1608,7 @@ const ProfilePage = () => {
                 Fastest Completion Times by Module
               </h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {fastestCompletions.map((module) => (
                 <div
                   key={module.moduleId}
@@ -1611,6 +1619,9 @@ const ProfilePage = () => {
                   </p>
                   <p className="text-sm font-medium text-gray-900">
                     {module.time}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {module.moduleName.replace(/^Scenario \d+: /, "")}
                   </p>
                 </div>
               ))}
@@ -1625,6 +1636,9 @@ const ProfilePage = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
             Module Progress
+            <span className="ml-2 text-sm text-gray-500">
+              ({moduleProgress.length}/3 modules attempted)
+            </span>
           </h3>
 
           {moduleProgress.length > 0 ? (
@@ -1672,11 +1686,55 @@ const ProfilePage = () => {
                   </div>
                 </div>
               ))}
+              
+              {/* Show modules not yet attempted */}
+              {Object.keys(REAL_MODULES).filter(id => 
+                !moduleProgress.some(p => p.moduleId === id)
+              ).map((moduleId) => (
+                <div
+                  key={moduleId}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/module/${moduleId}`)}
+                >
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className="flex items-center justify-center w-8 h-8 bg-gray-200 rounded-full">
+                      <Play className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">
+                        {getModuleName(moduleId)}
+                      </h4>
+                      <p className="text-sm text-gray-500">
+                        Not started yet
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Start
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">
-              No module progress yet. Start your first training session!
-            </p>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-4">No module progress yet.</p>
+              <p className="text-sm text-gray-400 mb-4">
+                Start your first training session from the available modules:
+              </p>
+              <div className="space-y-2">
+                {Object.entries(REAL_MODULES).map(([id, name]) => (
+                  <button
+                    key={id}
+                    onClick={() => navigate(`/module/${id}`)}
+                    className="block w-full p-3 text-left bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                  >
+                    <span className="font-medium text-blue-900">{name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -1825,8 +1883,7 @@ const ProfilePage = () => {
               <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No training sessions yet.</p>
               <p className="text-sm text-gray-400 mt-1">
-                Complete your first training module to see your session history
-                here.
+                Complete your first training module to see your session history here.
               </p>
             </div>
           )}
