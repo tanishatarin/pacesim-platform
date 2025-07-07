@@ -184,114 +184,190 @@ export const generateBradycardiaPoints = ({
   return points;
 };
 
-export const generateOversensingPoints = (): Point[] => {
-  const points: Point[] = [];
-
-  // Define the shape of a normal complex
-  const complex: Point[] = [
-    { x: 0, y: 0 },
-    { x: 10, y: 0.3 }, // P wave
-    { x: 20, y: 0 },
-    { x: 30, y: -0.2 }, // Q
-    { x: 35, y: 1.2 }, // R
-    { x: 40, y: -0.3 }, // S
-    { x: 50, y: 0.2 }, // T wave
-    { x: 60, y: 0 },
-  ];
-
-  const numberOfBeats = 3;
-  const spacing = 300; // space between beats (~1.5 sec)
-  let xCursor = 0;
-
-  // 1. Add a few normal beats
-  for (let i = 0; i < numberOfBeats; i++) {
-    for (const pt of complex) {
-      points.push({ x: xCursor + pt.x, y: pt.y });
-    }
-    xCursor += spacing;
-  }
-
-  // 2. Simulate oversensing (flatline — no pacing)
-  const oversensedDuration = 600;
-  for (let i = 0; i < oversensedDuration; i += 5) {
-    points.push({ x: xCursor + i, y: 0 });
-  }
-  xCursor += oversensedDuration;
-
-  // 3. Resume pacing after oversensing
-  for (const pt of complex) {
-    points.push({ x: xCursor + pt.x, y: pt.y });
-  }
-
-  return points;
-};
-
-export const generateUndersensingPoints = (): Point[] => {
-  const points: Point[] = [];
-
-  return points;
-};
-
-export const generateCaptureModulePoints = ({
-  rate,
-  aOutput,
-  vOutput,
-}: ECGParams): Point[] => {
-  const points: Point[] = [];
-  const totalLength = 160;
-
-  let lastQRS = -30;
-  const minInterval = 18;
-  const maxInterval = 35;
-
-  for (let i = 0; i < totalLength; i++) {
-    let y = (Math.random() - 0.5) * 0.6; // chaotic baseline
-
-    // Irregularly spaced QRS
-    if (
-      i - lastQRS >=
-      Math.floor(Math.random() * (maxInterval - minInterval)) + minInterval
-    ) {
-      y += 1.2 * Math.min(1, vOutput / 5); // ventricular spike (irregular timing)
-      lastQRS = i;
-    }
-
-    points.push({ x: i, y });
-  }
-
-  return points;
-};
-
-export const generateFailureToCapturePoints = ({
+export const generateThirdDegreeBlockPoints = ({
   rate,
   aOutput,
   vOutput,
   sensitivity,
+  currentStep,
+  currentStepIndex = 0,
 }: ECGParams): Point[] => {
+  console.log("💔 THIRD DEGREE BLOCK GENERATION:", {
+    rate,
+    vOutput,
+    sensitivity,
+    currentStep: currentStep?.id || "NO_STEP",
+  });
+
   const points: Point[] = [];
-  const beatLength = 16;
-  const numberOfBeats = 10;
 
-  // Still show spikes at pacing interval, but no QRS
-  for (let i = 0; i < numberOfBeats; i++) {
-    const offset = i * beatLength;
+  // Determine if we're in quiz phase or step phase
+  const isQuizPhase = !currentStep || currentStep.id === undefined;
 
-    // Atrial spike (optional based on aOutput)
-    if (aOutput > 0) {
-      points.push({ x: offset + 2, y: 4 });
-    }
+  if (isQuizPhase) {
+    // QUIZ PHASE: Show classic third degree block pattern
+    console.log("📝 Generating QUIZ phase third degree block...");
 
-    // Ventricular spike
-    points.push({ x: offset + 5, y: 4 });
+    const numberOfComplexes = 6;
+    const complexSpacing = 250; // Slow ventricular escape rhythm spacing
 
-    // No capture: flatline despite spike
-    for (let j = 0; j < beatLength; j++) {
-      if (j !== 2 && j !== 5) {
-        points.push({ x: offset + j, y: 0 });
+    // P waves occur regularly but are completely dissociated from QRS
+    const pWaveInterval = 120; // Regular P wave timing (faster than QRS)
+    const qrsInterval = complexSpacing; // Slow, regular ventricular escape
+
+    let xCursor = 0;
+    let pWaveTime = 0;
+    let qrsTime = 0;
+
+    // Generate for total duration
+    const totalDuration = numberOfComplexes * complexSpacing;
+
+    while (xCursor < totalDuration) {
+      let y = 0;
+
+      // Add P waves (regular, dissociated)
+      if (Math.abs(xCursor - pWaveTime) < 5) {
+        y += 0.15 * Math.sin((Math.PI * (xCursor - pWaveTime + 5)) / 10);
+      }
+
+      // Add QRS complexes (slow, regular escape rhythm)
+      if (Math.abs(xCursor - qrsTime) < 10) {
+        const qrsPosition = (xCursor - qrsTime + 10) / 20;
+        if (qrsPosition >= 0 && qrsPosition <= 1) {
+          // Wide, slow QRS complex (ventricular escape)
+          if (qrsPosition < 0.3) {
+            y -= 0.3; // Q wave
+          } else if (qrsPosition < 0.6) {
+            y += 1.2; // R wave (wider than normal)
+          } else {
+            y -= 0.4; // S wave
+          }
+        }
+      }
+
+      points.push({ x: xCursor, y });
+
+      // Advance time cursors
+      xCursor += 5;
+
+      // Update P wave timing (regular, faster than QRS)
+      if (xCursor >= pWaveTime + pWaveInterval) {
+        pWaveTime += pWaveInterval;
+      }
+
+      // Update QRS timing (regular, slow escape)
+      if (xCursor >= qrsTime + qrsInterval) {
+        qrsTime += qrsInterval;
       }
     }
+
+    console.log(
+      "✅ Third degree block pattern generated:",
+      points.length,
+      "points",
+    );
+    return points;
   }
 
+  // STEP PHASE: Modify pattern based on current step
+  console.log("🎯 Generating STEP phase third degree block...");
+
+  // For now, return the same pattern - you can modify based on pacing settings later
+  return points;
+};
+
+export const generateAtrialFibrillationPoints = ({
+  rate,
+  aOutput,
+  vOutput,
+  sensitivity,
+  currentStep,
+  currentStepIndex = 0,
+}: ECGParams): Point[] => {
+  console.log("🌊 ATRIAL FIBRILLATION GENERATION:", {
+    rate,
+    aOutput,
+    vOutput,
+    currentStep: currentStep?.id || "NO_STEP",
+  });
+
+  const points: Point[] = [];
+
+  const isQuizPhase = !currentStep || currentStep.id === undefined;
+
+  if (isQuizPhase) {
+    // QUIZ PHASE: Show A fib with slow ventricular response
+    console.log("📝 Generating QUIZ phase atrial fibrillation...");
+
+    const totalDuration = 1500;
+    const avgVentricularInterval = 400; // Slow ventricular response (38 BPM equivalent)
+
+    let xCursor = 0;
+    let nextQrsTime = 150;
+
+    while (xCursor < totalDuration) {
+      let y = 0;
+
+      // Add fibrillatory waves (chaotic atrial activity)
+      const fibrillationAmplitude =
+        0.05 +
+        0.03 * Math.sin(xCursor * 0.1) +
+        0.02 * Math.sin(xCursor * 0.3) +
+        0.015 * Math.sin(xCursor * 0.7);
+      y += fibrillationAmplitude;
+
+      // Add irregular QRS complexes
+      if (Math.abs(xCursor - nextQrsTime) < 15) {
+        const qrsPosition = (xCursor - nextQrsTime + 15) / 30;
+        if (qrsPosition >= 0 && qrsPosition <= 1) {
+          if (qrsPosition < 0.2) {
+            y -= 0.2; // Q wave
+          } else if (qrsPosition < 0.5) {
+            y += 1.0; // R wave
+          } else if (qrsPosition < 0.7) {
+            y -= 0.3; // S wave
+          } else {
+            y += 0.2; // T wave
+          }
+        }
+
+        // Set next QRS time (irregular intervals)
+        if (xCursor >= nextQrsTime + 15) {
+          const irregularity = (Math.random() - 0.5) * 100; // ±50ms variation
+          nextQrsTime += avgVentricularInterval + irregularity;
+        }
+      }
+
+      points.push({ x: xCursor, y });
+      xCursor += 5;
+    }
+
+    console.log(
+      "✅ Atrial fibrillation pattern generated:",
+      points.length,
+      "points",
+    );
+    return points;
+  }
+
+  // STEP PHASE: Show effects of pacing settings
+  console.log("🎯 Generating STEP phase atrial fibrillation...");
+
+  // Check if atrial pacing is disabled (step 2 and beyond)
+  const atrialPacingOff =
+    currentStep?.id &&
+    (currentStep.id === "afib_step2" ||
+      parseInt(currentStep.id.split("step")[1]) > 2);
+
+  if (atrialPacingOff && aOutput === 0) {
+    // Show A fib without atrial pacing artifacts
+    console.log("🚫 Atrial pacing disabled - clean A fib pattern");
+  } else if (aOutput > 0) {
+    // Show inappropriate atrial pacing spikes in A fib
+    console.log("⚠️ Inappropriate atrial pacing in A fib");
+  }
+
+  // Return the base A fib pattern for now
   return points;
 };
 

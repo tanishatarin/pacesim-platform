@@ -3,10 +3,8 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
   generateNormalPacingPoints,
   generateBradycardiaPoints,
-  generateOversensingPoints,
-  generateUndersensingPoints,
-  generateCaptureModulePoints,
-  generateFailureToCapturePoints,
+  generateAtrialFibrillationPoints,
+  generateThirdDegreeBlockPoints,
 } from "@/components/ecgModes";
 import type { ModuleStep } from "@/types/module";
 
@@ -15,12 +13,7 @@ interface ECGVisualizerProps {
   aOutput?: number;
   vOutput?: number;
   sensitivity?: number;
-  mode?:
-    | "sensitivity"
-    | "oversensing"
-    | "undersensing"
-    | "capture_module"
-    | "failure_to_capture";
+  mode?: "sensitivity" | "third_degree_block" | "atrial_fibrillation";
 }
 
 const speedMultipliers: Record<string, number> = {
@@ -87,19 +80,9 @@ const ECGVisualizer = ({
         });
         break;
 
-      case "oversensing":
-        console.log("📊  thinks its oversensing...");
-        result = generateOversensingPoints();
-        break;
-
-      case "undersensing":
-        console.log("📊  thinks its undersesning ...");
-        result = generateUndersensingPoints();
-        break;
-
-      case "capture_module":
-        console.log("📊  thinks its capture module ...");
-        result = generateCaptureModulePoints({
+      case "third_degree_block":
+        console.log("📊 Generating third degree block pattern...");
+        result = generateThirdDegreeBlockPoints({
           rate,
           aOutput,
           vOutput,
@@ -107,9 +90,23 @@ const ECGVisualizer = ({
         });
         break;
 
-      case "failure_to_capture":
-        console.log("📊  thinks its failure to capture ...");
-        result = generateFailureToCapturePoints({
+      case "atrial_fibrillation":
+        console.log("📊 Generating atrial fibrillation pattern...");
+        result = generateAtrialFibrillationPoints({
+          rate,
+          aOutput,
+          vOutput,
+          sensitivity,
+        });
+        break;
+
+      default:
+        console.log(
+          "⚠️ Unknown ECG mode:",
+          mode,
+          "- using bradycardia as fallback",
+        );
+        result = generateBradycardiaPoints({
           rate,
           aOutput,
           vOutput,
@@ -117,9 +114,9 @@ const ECGVisualizer = ({
         });
         break;
     }
+
     console.log("📈 Generated points:", {
       count: result.length,
-      all: result,
       firstFew: result.slice(0, 3),
       lastFew: result.slice(-3),
     });

@@ -20,12 +20,7 @@ import { usePacemakerData } from "../hooks/usePacemakerData";
 interface ModuleConfig {
   title: string;
   objective: string;
-  mode:
-    | "sensitivity"
-    | "oversensing"
-    | "undersensing"
-    | "capture_module"
-    | "failure_to_capture";
+  mode: "sensitivity" | "third_degree_block" | "atrial_fibrillation";
   initialParams: {
     rate: number;
     aOutput: number;
@@ -41,6 +36,8 @@ interface ModuleConfig {
     vSensitivity: boolean;
   };
 }
+
+// In ModulePage.tsx - REPLACE the moduleConfigs object with only these 3 real modules:
 
 const moduleConfigs: Record<string, ModuleConfig> = {
   "1": {
@@ -63,84 +60,46 @@ const moduleConfigs: Record<string, ModuleConfig> = {
       vSensitivity: false,
     },
   },
+
   "2": {
-    title: "Scenario 2: Oversensing Issues",
+    title: "Scenario 2: Third Degree Heart Block",
     objective:
-      "Identify and correct oversensing problems that are causing inappropriate pacing inhibition.\n\nScenario: The pacemaker is detecting signals that shouldn't inhibit pacing.",
-    mode: "oversensing",
+      "Diagnose and manage third degree heart block with appropriate VVI pacing settings.\n\nScenario: POD 3 MVR patient feeling 'funny'. HR is 30, BP is 85/50 MAP (62). You have 1V and 1 skin wire available.",
+    mode: "third_degree_block",
     initialParams: {
-      rate: 70,
-      aOutput: 5,
-      vOutput: 5,
-      aSensitivity: 4,
-      vSensitivity: 4,
-    },
-    controlsNeeded: {
-      rate: true,
-      aOutput: true,
-      vOutput: true,
-      aSensitivity: true,
-      vSensitivity: true,
-    },
-  },
-  "3": {
-    title: "Scenario 3: Undersensing Problems",
-    objective:
-      "Correct undersensing issues where the pacemaker fails to detect intrinsic cardiac activity.\n\nScenario: The pacemaker is not sensing the patient's own heartbeats.",
-    mode: "undersensing",
-    initialParams: {
-      rate: 60,
-      aOutput: 5,
-      vOutput: 5,
-      aSensitivity: 0.5,
-      vSensitivity: 0.8,
-    },
-    controlsNeeded: {
-      rate: true,
-      aOutput: false,
-      vOutput: true,
-      aSensitivity: true,
-      vSensitivity: true,
-    },
-  },
-  "4": {
-    title: "Capture Calibration Module",
-    objective:
-      "Learn to establish and verify proper cardiac capture.\n\nScenario: Practice adjusting output levels to achieve consistent capture.",
-    mode: "capture_module",
-    initialParams: {
-      rate: 80,
-      aOutput: 3,
-      vOutput: 2,
-      aSensitivity: 2,
-      vSensitivity: 2,
-    },
-    controlsNeeded: {
-      rate: true,
-      aOutput: true,
-      vOutput: true,
-      aSensitivity: false,
-      vSensitivity: false,
-    },
-  },
-  "5": {
-    title: "Failure to Capture",
-    objective:
-      "Diagnose and correct failure to capture situations.\n\nScenario: Pacing spikes are present but not followed by cardiac depolarization.",
-    mode: "failure_to_capture",
-    initialParams: {
-      rate: 70,
+      rate: 30,
       aOutput: 1,
+      vOutput: 1,
+      aSensitivity: 1,
+      vSensitivity: 1,
+    },
+    controlsNeeded: {
+      rate: true,
+      aOutput: false, // Not needed for VVI pacing
+      vOutput: true,
+      aSensitivity: false, // Not needed for VVI pacing
+      vSensitivity: true,
+    },
+  },
+
+  "3": {
+    title: "Scenario 3: Atrial Fibrillation with Bradycardia",
+    objective:
+      "Manage atrial fibrillation patient who developed bradycardia after rate control medications.\n\nScenario: POD 3 AVR patient developed A fib with rapid rate. After amiodarone and metoprolol, HR dropped to 38 with BP 77/43 MAP (54). Patient still in A fib.",
+    mode: "atrial_fibrillation",
+    initialParams: {
+      rate: 38,
+      aOutput: 5, // Will be turned off during training
       vOutput: 1,
       aSensitivity: 2,
       vSensitivity: 2,
     },
     controlsNeeded: {
       rate: true,
-      aOutput: true,
+      aOutput: true, // Needed to demonstrate turning it off
       vOutput: true,
-      aSensitivity: false,
-      vSensitivity: false,
+      aSensitivity: false, // A fib makes atrial sensing irrelevant
+      vSensitivity: true,
     },
   },
 };
@@ -1397,7 +1356,7 @@ const ModulePage = () => {
                         : "bg-gray-300"
                     }`}
                   />
-                  <span className="mt-2 text-sm text-gray-600">Atrial</span>
+                  <span className="mt-2 text-sm text-gray-600">Pace</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <div
@@ -1407,9 +1366,7 @@ const ModulePage = () => {
                         : "bg-gray-300"
                     }`}
                   />
-                  <span className="mt-2 text-sm text-gray-600">
-                    Ventricular
-                  </span>
+                  <span className="mt-2 text-sm text-gray-600">Sense</span>
                 </div>
               </div>
             </div>

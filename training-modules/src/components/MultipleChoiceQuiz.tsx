@@ -57,112 +57,100 @@ const quizData: Record<number, QuizQuestion[]> = {
         "AAI mode is appropriate when you have atrial leads and want atrial pacing with inhibition based on sensed atrial activity.",
     },
   ],
+  // Module 2: Third Degree Block (renumbered from 6)
   2: [
     {
-      id: "scenario2_q1",
-      question: "What is the primary issue shown in this ECG pattern?",
+      id: "third_degree_q1",
+      question: "What condition is indicated by this ECG rhythm?",
       options: [
-        "Oversensing",
-        "Undersensing",
-        "Battery failure",
-        "Lead fracture",
+        "Sinus bradycardia",
+        "Junctional rhythm",
+        "Third degree heart block",
+        "Second degree heart block",
       ],
-      correctAnswer: 0,
+      correctAnswer: 2,
       explanation:
-        "Oversensing occurs when the pacemaker detects signals that shouldn't inhibit pacing, leading to inappropriate inhibition.",
+        "Third degree heart block shows complete AV dissociation - P waves and QRS complexes occur independently with no relationship between them.",
     },
     {
-      id: "scenario2_q2",
-      question: "How would you correct oversensing?",
+      id: "third_degree_q2",
+      question:
+        "What is the most appropriate initial pacing mode for this patient with only ventricular leads?",
+      options: ["AAI", "VVI", "DDD", "DOO"],
+      correctAnswer: 1,
+      explanation:
+        "VVI mode is appropriate when only ventricular leads are available. It provides ventricular pacing with inhibition based on sensed ventricular activity.",
+    },
+    {
+      id: "third_degree_q3",
+      question: "What is the primary hemodynamic concern with this rhythm?",
       options: [
-        "Increase sensitivity",
-        "Decrease sensitivity",
-        "Increase pacing rate",
-        "Replace the battery",
+        "Tachycardia",
+        "Loss of AV synchrony and slow rate",
+        "Atrial fibrillation",
+        "Ventricular tachycardia",
       ],
       correctAnswer: 1,
       explanation:
-        "Decreasing sensitivity makes the pacemaker less sensitive to small signals that may cause inappropriate inhibition.",
+        "Third degree block causes loss of AV synchrony and often results in slow ventricular escape rhythms, leading to reduced cardiac output and hypotension.",
     },
   ],
+
+  // Module 3: Atrial Fibrillation (renumbered from 7)
   3: [
     {
-      id: "scenario3_q1",
-      question: "What adjustment is needed to correct undersensing?",
+      id: "afib_q1",
+      question: "Why is atrial pacing inappropriate in this rhythm?",
       options: [
-        "Increase sensitivity",
-        "Decrease sensitivity",
-        "Change pacing mode",
-        "Replace battery",
+        "The atrial rate is too fast",
+        "Atrial activity is chaotic and unorganized",
+        "The patient has heart block",
+        "The ventricular rate is too slow",
       ],
-      correctAnswer: 0,
-      explanation:
-        "Increasing sensitivity makes the pacemaker more sensitive to detect smaller intrinsic cardiac signals.",
-    },
-    {
-      id: "scenario3_q2",
-      question: "What could be a cause of undersensing?",
-      options: [
-        "Lead displacement",
-        "Electromagnetic interference",
-        "Low battery",
-        "All of the above",
-      ],
-      correctAnswer: 3,
-      explanation:
-        "All of these factors can contribute to undersensing by affecting the pacemaker's ability to detect intrinsic cardiac activity.",
-    },
-  ],
-  4: [
-    {
-      id: "capture_q1",
-      question: "What indicates successful cardiac capture?",
-      options: [
-        "Pacing spike followed by QRS complex",
-        "Pacing spike only",
-        "No pacing spike visible",
-        "Irregular heart rhythm",
-      ],
-      correctAnswer: 0,
-      explanation:
-        "Successful capture is indicated by a pacing spike followed by an appropriate cardiac response (QRS for ventricular pacing, P-wave for atrial pacing).",
-    },
-    {
-      id: "capture_q2",
-      question:
-        "What is the typical starting point for capture threshold testing?",
-      options: ["1.0 mA", "5.0 mA", "10.0 mA", "20.0 mA"],
       correctAnswer: 1,
       explanation:
-        "Capture threshold testing typically starts at 5.0 mA and is gradually decreased until loss of capture occurs.",
-    },
-  ],
-  5: [
-    {
-      id: "failure_capture_q1",
-      question: "How do you correct failure to capture?",
-      options: [
-        "Increase pacing output",
-        "Decrease pacing output",
-        "Increase sensitivity",
-        "Check battery only",
-      ],
-      correctAnswer: 0,
-      explanation:
-        "Failure to capture is corrected by increasing the pacing output (mA) to provide sufficient energy to stimulate the heart muscle.",
+        "In atrial fibrillation, atrial activity is chaotic and disorganized. Atrial pacing cannot restore organized atrial contraction or improve AV synchrony.",
     },
     {
-      id: "failure_capture_q2",
-      question: "What could cause failure to capture?",
+      id: "afib_q2",
+      question: "What caused the bradycardia in this A fib patient?",
       options: [
-        "Lead displacement",
-        "Inadequate output energy",
-        "Scar tissue at electrode site",
-        "All of the above",
+        "Progression of heart disease",
+        "Rate control medications (amiodarone and metoprolol)",
+        "Electrolyte imbalance",
+        "Cardiac tamponade",
       ],
-      correctAnswer: 3,
+      correctAnswer: 1,
       explanation:
-        "All of these factors can prevent the pacemaker from successfully capturing and stimulating the heart muscle.",
+        "The patient received amiodarone and metoprolol for rate control of rapid A fib, which over-suppressed the ventricular response, causing bradycardia.",
+    },
+    {
+      id: "afib_q3",
+      question:
+        "What is the most appropriate pacing mode for A fib with bradycardia?",
+      options: [
+        "AAI - atrial pacing only",
+        "DDD - dual chamber pacing",
+        "VVI - ventricular pacing with inhibition",
+        "DOO - dual chamber asynchronous",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "VVI mode is ideal for A fib because it provides backup ventricular pacing when needed while ignoring the chaotic atrial activity. Atrial pacing modes are ineffective in A fib.",
+    },
+    {
+      id: "afib_q4",
+      question:
+        "What should be done with the atrial output setting in this patient?",
+      options: [
+        "Increase it to maximum",
+        "Set it to normal levels",
+        "Turn it off completely",
+        "Decrease it slightly",
+      ],
+      correctAnswer: 2,
+      explanation:
+        "Atrial output should be turned off in A fib patients because atrial pacing provides no benefit and may cause unnecessary energy consumption and potential complications.",
     },
   ],
 };

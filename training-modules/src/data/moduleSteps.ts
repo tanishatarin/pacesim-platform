@@ -22,12 +22,7 @@ export interface ModuleConfig {
   objective: string;
   scenario: string;
   steps: ModuleStep[];
-  ecgMode:
-    | "sensitivity"
-    | "oversensing"
-    | "undersensing"
-    | "capture_module"
-    | "failure_to_capture";
+  ecgMode: "sensitivity" | "third_degree_block" | "atrial_fibrillation";
   initialParams: {
     rate: number;
     aOutput: number;
@@ -45,7 +40,7 @@ const defaultCompletionCriteria = (
   for (const [key, targetValue] of Object.entries(targetValues)) {
     const currentValue = currentParams[key];
     if (typeof targetValue === "number" && typeof currentValue === "number") {
-      const tolerance = Math.max(0.1, targetValue * 0.1); // 10% tolerance or 0.1 minimum
+      const tolerance = Math.max(0.05, targetValue * 0.05); // 5% tolerance or 0.05 minimum
       if (Math.abs(currentValue - targetValue) > tolerance) {
         return false;
       }
@@ -55,8 +50,6 @@ const defaultCompletionCriteria = (
   }
   return true;
 };
-
-// ADD THESE CUSTOM COMPLETION FUNCTIONS HERE:
 
 // Custom completion criteria for sensing threshold steps
 const sensingThresholdCriteria = (
@@ -222,226 +215,253 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
     ],
   },
 
+  // Module 2: Third Degree Block - Real steps from clinical document
   "2": {
     id: "2",
-    title: "Scenario 2: Oversensing Issues",
+    title: "Scenario 2: Third Degree Heart Block",
     objective:
-      "Identify and correct oversensing problems causing inappropriate pacing inhibition.",
+      "Diagnose and manage third degree heart block with appropriate VVI pacing settings.",
     scenario:
-      "The pacemaker is detecting signals that shouldn't inhibit pacing, causing irregular pacing patterns.",
-    ecgMode: "oversensing",
+      "50-year-old male, POD 3 from MVR. Patient feeling 'funny', HR is 30, BP is 85/50 MAP (62). You have 1V and 1 skin wire.",
+    ecgMode: "third_degree_block",
     initialParams: {
-      rate: 70,
-      aOutput: 5,
-      vOutput: 5,
-      aSensitivity: 4,
-      vSensitivity: 4,
-    },
-    steps: [
-      {
-        id: "step1",
-        objective: "Identify oversensing",
-        instruction:
-          "Observe the ECG pattern and identify inappropriate pacing inhibition",
-        targetValues: {}, // No parameter changes, just observation
-        allowedControls: [],
-        flashingSensor: "right",
-        completionCriteria: autoCompleteCriteria, // Auto-advance after delay
-        hint: "Look for pacing spikes that should be present but are missing due to false sensing",
-      },
-      {
-        id: "step2",
-        objective: "Decrease ventricular sensitivity",
-        instruction:
-          "Reduce ventricular sensitivity to 2.0 mV to prevent false sensing",
-        targetValues: { vSensitivity: 2.0 },
-        allowedControls: ["vSensitivity"],
-        flashingSensor: "right",
-        completionCriteria: vSensingThresholdCriteria, // Use custom criteria
-        hint: "Decreasing sensitivity makes the pacemaker less likely to detect false signals",
-      },
-      {
-        id: "step3",
-        objective: "Check atrial sensitivity",
-        instruction:
-          "Also reduce atrial sensitivity to 2.0 mV if oversensing persists",
-        targetValues: { aSensitivity: 2.0 },
-        allowedControls: ["aSensitivity"],
-        flashingSensor: "left",
-        completionCriteria: sensingThresholdCriteria,
-        hint: "Both chambers may need sensitivity adjustment to eliminate oversensing",
-      },
-      {
-        id: "step4",
-        objective: "Verify normal pacing",
-        instruction:
-          "Confirm that pacing is now occurring at the expected intervals",
-        targetValues: {},
-        allowedControls: [],
-        flashingSensor: null,
-        completionCriteria: autoCompleteCriteria,
-        hint: "The ECG should now show regular pacing spikes at the programmed rate",
-      },
-    ],
-  },
-
-  // Continue with other modules...
-  "3": {
-    id: "3",
-    title: "Scenario 3: Undersensing Problems",
-    objective:
-      "Correct undersensing issues where the pacemaker fails to detect intrinsic cardiac activity.",
-    scenario:
-      "The pacemaker is not sensing the patient's own heartbeats, leading to unnecessary pacing.",
-    ecgMode: "undersensing",
-    initialParams: {
-      rate: 60,
-      aOutput: 5,
-      vOutput: 5,
-      aSensitivity: 0.5,
-      vSensitivity: 0.8,
-    },
-    steps: [
-      {
-        id: "step1",
-        objective: "Identify undersensing",
-        instruction: "Observe pacing spikes occurring despite intrinsic rhythm",
-        targetValues: {},
-        allowedControls: [],
-        flashingSensor: "right",
-        completionCriteria: autoCompleteCriteria,
-        hint: "Look for pacing spikes that occur too close to intrinsic beats",
-      },
-      {
-        id: "step2",
-        objective: "Increase ventricular sensitivity",
-        instruction:
-          "Increase ventricular sensitivity to 2.0 mV to better detect intrinsic beats",
-        targetValues: { vSensitivity: 2.0 },
-        allowedControls: ["vSensitivity"],
-        flashingSensor: "right",
-        completionCriteria: vSensingThresholdCriteria,
-        hint: "Higher sensitivity helps detect smaller intrinsic signals",
-      },
-      {
-        id: "step3",
-        objective: "Increase atrial sensitivity",
-        instruction:
-          "Also increase atrial sensitivity to 1.5 mV for proper atrial sensing",
-        targetValues: { aSensitivity: 1.5 },
-        allowedControls: ["aSensitivity"],
-        flashingSensor: "left",
-        completionCriteria: sensingThresholdCriteria,
-        hint: "Both chambers need appropriate sensitivity for proper sensing",
-      },
-      {
-        id: "step4",
-        objective: "Verify appropriate sensing",
-        instruction:
-          "Confirm the pacemaker now properly inhibits when intrinsic beats occur",
-        targetValues: {},
-        allowedControls: [],
-        flashingSensor: null,
-        completionCriteria: autoCompleteCriteria,
-        hint: "Pacing should only occur when intrinsic beats are not detected",
-      },
-    ],
-  },
-
-  "4": {
-    id: "4",
-    title: "Capture Calibration Module",
-    objective: "Learn to establish and verify proper cardiac capture.",
-    scenario: "Practice adjusting output levels to achieve consistent capture.",
-    ecgMode: "capture_module",
-    initialParams: {
-      rate: 80,
-      aOutput: 3,
-      vOutput: 2,
-      aSensitivity: 2,
-      vSensitivity: 2,
-    },
-    steps: [
-      {
-        id: "step1",
-        objective: "Start with low output",
-        instruction:
-          "Begin with ventricular output at 1.0 mA to find threshold",
-        targetValues: { vOutput: 1.0 },
-        allowedControls: ["vOutput"],
-        flashingSensor: "right",
-        completionCriteria: defaultCompletionCriteria,
-        hint: "Start low and gradually increase to find the minimum capture threshold",
-      },
-      {
-        id: "step2",
-        objective: "Increase until capture",
-        instruction:
-          "Gradually increase ventricular output until consistent capture is achieved",
-        targetValues: { vOutput: 3.5 },
-        allowedControls: ["vOutput"],
-        flashingSensor: "right",
-        completionCriteria: defaultCompletionCriteria,
-        hint: "Each pacing spike should be followed by a QRS complex when capture occurs",
-      },
-      {
-        id: "step3",
-        objective: "Set safety margin",
-        instruction: "Set output to double the threshold for safety (7.0 mA)",
-        targetValues: { vOutput: 7.0 },
-        allowedControls: ["vOutput"],
-        flashingSensor: "right",
-        completionCriteria: defaultCompletionCriteria,
-        hint: "Double the threshold provides a safety margin for reliable capture",
-      },
-    ],
-  },
-
-  "5": {
-    id: "5",
-    title: "Failure to Capture",
-    objective: "Diagnose and correct failure to capture situations.",
-    scenario:
-      "Pacing spikes are present but not followed by cardiac depolarization.",
-    ecgMode: "failure_to_capture",
-    initialParams: {
-      rate: 70,
+      rate: 30, // Patient's ventricular escape rate
       aOutput: 1,
       vOutput: 1,
+      aSensitivity: 1,
+      vSensitivity: 1,
+    },
+    steps: [
+      {
+        id: "td_step1",
+        objective: "Set heart rate to 30 BPM",
+        instruction:
+          "Set the heart rate to 30 (at least 10 beats/min lower than patient's intrinsic rate)",
+        targetValues: { rate: 30 },
+        allowedControls: ["rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Ensures non-pacing because set rate is below patient's intrinsic rate",
+      },
+      {
+        id: "td_step2",
+        objective: "Set ventricular output to 0.1mA",
+        instruction:
+          "Adjust ventricular output to 0.1mA to prevent asynchronous pacing",
+        targetValues: { vOutput: 0.1 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Capture is not likely because output is at minimum",
+      },
+      {
+        id: "td_step3",
+        objective: "Set V sensitivity to maximum (0.8mV)",
+        instruction:
+          "Adjust vSensitivity to 0.8mV (highest possible sensitivity for V wires)",
+        targetValues: { vSensitivity: 0.8 },
+        allowedControls: ["vSensitivity"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Start with highest sensitivity for V wires",
+      },
+      {
+        id: "td_step4",
+        objective: "Find V sensing threshold at 2.0mV",
+        instruction:
+          "Slowly increase vSensitivity to 2.0mV until sense indicator stops flashing",
+        targetValues: { vSensitivity: 2.0 },
+        allowedControls: ["vSensitivity"],
+        completionCriteria: vSensingThresholdCriteria,
+        hint: "Sensing threshold occurs at 2.0mV in this scenario",
+      },
+      {
+        id: "td_step5",
+        objective: "Set V sensitivity to half threshold (1.0mV)",
+        instruction:
+          "Set vSensitivity to half the sensing threshold (1.0mV) for safety margin",
+        targetValues: { vSensitivity: 1.0 },
+        allowedControls: ["vSensitivity"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Half threshold provides safety margin",
+      },
+      {
+        id: "td_step6",
+        objective: "Set rate to 40 BPM",
+        instruction:
+          "Turn pacemaker rate up to 40 (10 beats/min higher than patient's intrinsic rate)",
+        targetValues: { rate: 40 },
+        allowedControls: ["rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "10 BPM above patient's intrinsic escape rate",
+      },
+      {
+        id: "td_step7",
+        objective: "Find V capture threshold at 5mA",
+        instruction:
+          "Slowly increase vOutput. Close to 1:1 capture shows HR=37 at 5mA",
+        targetValues: { vOutput: 5 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Getting close to capture at 5mA",
+      },
+      {
+        id: "td_step8",
+        objective: "Achieve full V capture at 7mA",
+        instruction:
+          "Continue increasing vOutput until HR=40 on monitor (full capture at 7mA)",
+        targetValues: { vOutput: 7 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Full 1:1 capture occurs at 7mA",
+      },
+      {
+        id: "td_step9",
+        objective: "Set safety margin to 14mA",
+        instruction:
+          "Set vOutput to two times the stimulation threshold (14mA) for safety",
+        targetValues: { vOutput: 14 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Double the threshold for safety margin",
+      },
+      {
+        id: "td_step10",
+        objective: "Set final rate to 80 BPM",
+        instruction: "Set pacemaker to 80 BPM per prescriber order",
+        targetValues: { rate: 80 },
+        allowedControls: ["rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Final prescribed rate",
+      },
+    ],
+  },
+
+  // Module 3: A Fib Scenario - Real steps from clinical document
+  "3": {
+    id: "3",
+    title: "Scenario 3: Atrial Fibrillation with Bradycardia",
+    objective:
+      "Manage atrial fibrillation patient who developed bradycardia after rate control medications.",
+    scenario:
+      "68-year-old male, POD 3 from AVR. Developed A fib with HR=160. After amiodarone and metoprolol, HR=38, BP=77/43 (54). You have 2A and 2V wires.",
+    ecgMode: "atrial_fibrillation",
+    initialParams: {
+      rate: 74, // Normal rate during initial wire testing
+      aOutput: 5,
+      vOutput: 5,
       aSensitivity: 2,
       vSensitivity: 2,
     },
     steps: [
+      // Initial wire testing (before A fib develops)
       {
-        id: "step1",
-        objective: "Identify failure to capture",
+        id: "afib_step1",
+        objective: "Check A wire sensitivity to 4mV threshold",
         instruction:
-          "Observe pacing spikes without corresponding QRS complexes",
-        targetValues: {},
-        allowedControls: [],
-        flashingSensor: "right",
-        completionCriteria: autoCompleteCriteria,
-        hint: "Look for pacing artifacts that are not followed by cardiac depolarization",
+          "Set rate to 64, A sensitivity to 0.4mV, then slowly increase to 4mV until sensing threshold found",
+        targetValues: { aSensitivity: 4, rate: 64 },
+        allowedControls: ["aSensitivity", "rate"],
+        completionCriteria: sensingThresholdCriteria,
+        hint: "A wire sensing threshold is 4mV in this scenario",
       },
       {
-        id: "step2",
-        objective: "Increase ventricular output",
-        instruction: "Increase ventricular output to 5.0 mA to achieve capture",
-        targetValues: { vOutput: 5.0 },
-        allowedControls: ["vOutput"],
-        flashingSensor: "right",
+        id: "afib_step2",
+        objective: "Set A sensitivity safety margin to 2mV",
+        instruction:
+          "Set aSensitivity to half the threshold (2mV) for safety margin",
+        targetValues: { aSensitivity: 2 },
+        allowedControls: ["aSensitivity"],
         completionCriteria: defaultCompletionCriteria,
-        hint: "Higher output energy is needed to stimulate the heart muscle",
+        hint: "Half threshold for safety",
       },
       {
-        id: "step3",
-        objective: "Verify capture achieved",
-        instruction: "Confirm each pacing spike now produces a QRS complex",
-        targetValues: {},
-        allowedControls: [],
-        flashingSensor: null,
-        completionCriteria: autoCompleteCriteria,
-        hint: "Successful capture shows QRS complexes following each pacing spike",
+        id: "afib_step3",
+        objective: "Find A capture threshold at 10mA",
+        instruction:
+          "Set rate to 84, slowly increase aOutput until close to capture at 10mA (HR shows 80)",
+        targetValues: { aOutput: 10, rate: 84 },
+        allowedControls: ["aOutput", "rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Close to A capture at 10mA",
+      },
+      {
+        id: "afib_step4",
+        objective: "Achieve A full capture at 12mA",
+        instruction:
+          "Continue increasing aOutput until full 1:1 A capture (HR=84) at 12mA",
+        targetValues: { aOutput: 12 },
+        allowedControls: ["aOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Full atrial capture at 12mA",
+      },
+      {
+        id: "afib_step5",
+        objective: "Set A output safety margin to 24mA",
+        instruction:
+          "Set aOutput to double the threshold (24mA) for safety margin",
+        targetValues: { aOutput: 24 },
+        allowedControls: ["aOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Double threshold for safety",
+      },
+      // V wire testing
+      {
+        id: "afib_step6",
+        objective: "Find V sensing threshold at 5mV",
+        instruction:
+          "Test V wires: slowly increase vSensitivity from 0.8mV to 5mV threshold",
+        targetValues: { vSensitivity: 5 },
+        allowedControls: ["vSensitivity"],
+        completionCriteria: vSensingThresholdCriteria,
+        hint: "V sensing threshold is 5mV in this scenario",
+      },
+      {
+        id: "afib_step7",
+        objective: "Set V sensitivity safety margin to 2.5mV",
+        instruction:
+          "Set vSensitivity to half the threshold (2.5mV) for safety",
+        targetValues: { vSensitivity: 2.5 },
+        allowedControls: ["vSensitivity"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Half threshold for safety margin",
+      },
+      {
+        id: "afib_step8",
+        objective: "Find V capture threshold at 8mA",
+        instruction:
+          "Test V capture: slowly increase vOutput until close to capture at 8mA (HR shows 80)",
+        targetValues: { vOutput: 8 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Close to V capture at 8mA",
+      },
+      {
+        id: "afib_step9",
+        objective: "Achieve V full capture at 10mA",
+        instruction:
+          "Continue increasing vOutput until full 1:1 V capture (HR=84) at 10mA",
+        targetValues: { vOutput: 10 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Full ventricular capture at 10mA",
+      },
+      {
+        id: "afib_step10",
+        objective: "Set V output safety margin to 20mA",
+        instruction: "Set vOutput to double the threshold (20mA) for safety",
+        targetValues: { vOutput: 20 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Double threshold for safety",
+      },
+      // Patient develops A fib and needs VVI pacing
+      {
+        id: "afib_step11",
+        objective: "Patient develops A fib - turn on VVI at 80 BPM",
+        instruction:
+          "Patient now in A fib with bradycardia after medications. Set VVI pacing at 80 BPM",
+        targetValues: { rate: 80 },
+        allowedControls: ["rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "VVI pacing needed due to medication-induced bradycardia in A fib",
       },
     ],
   },
