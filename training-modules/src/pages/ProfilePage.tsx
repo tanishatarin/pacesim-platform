@@ -1091,8 +1091,10 @@ const ProfilePage = () => {
     const averageScore =
       sessionsWithQuiz.length > 0
         ? sessionsWithQuiz.reduce(
-            (sum, s) =>
-              sum + (s.quizState!.score / s.quizState!.totalQuestions) * 100,
+            (sum, s) => {
+              const percentage = (s.quizState!.score / s.quizState!.totalQuestions) * 100;
+              return sum + percentage;
+            },
             0,
           ) / sessionsWithQuiz.length
         : 0;
@@ -1811,8 +1813,8 @@ const ProfilePage = () => {
                       <span className="text-gray-500">Quiz Score:</span>
                       <span className="ml-1 font-medium">
                         {group.bestQuizScore
-                          ? `${group.bestQuizScore.score}/${group.bestQuizScore.total} (${Math.round((group.bestQuizScore.score / group.bestQuizScore.total) * 100)}%)`
-                          : "N/A"}
+                        ? `${group.bestQuizScore.score}/${group.bestQuizScore.total} (${Math.round((group.bestQuizScore.score / group.bestQuizScore.total) * 100)}%)`
+                        : "N/A"}
                       </span>
                     </div>
                     <div>

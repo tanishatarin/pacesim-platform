@@ -1135,47 +1135,35 @@ const MultipleChoiceQuiz = ({
     }
   }, [currentQuestionIndex, currentSession, updateSession]);
 
-  // 🔥 FIX: Calculate score correctly - count correct answers for THIS session only
   const completeQuiz = useCallback(() => {
     let correctAnswers = 0;
-    
-    // Count correct answers based on current quiz state, not accumulated
     questions.forEach((question) => {
       if (selectedAnswers[question.id] === question.correctAnswer) {
-        correctAnswers++;
+        correctAnswers++; 
       }
     });
 
     const passed = correctAnswers >= Math.ceil(questions.length * 0.7);
-    const totalQuestions = questions.length;
-
-    console.log("🎯 Quiz completed:", {
-      moduleId,
-      correctAnswers,
-      totalQuestions,
-      passed,
-      percentage: Math.round((correctAnswers / totalQuestions) * 100)
-    });
+    const totalQuestions = questions.length; 
 
     setQuizCompleted(true);
     setShowReviewMode(true);
 
     if (currentSession) {
-      // 🔥 FIX: Set EXACT score values, don't accumulate
       updateSession(currentSession.id, {
         currentStep: "practice",
         quizState: {
           ...currentSession.quizState,
           isCompleted: true,
-          score: correctAnswers,        // 🚨 EXACT count, not accumulated
-          totalQuestions: totalQuestions, // 🚨 EXACT total for this module
+          score: correctAnswers,        
+          totalQuestions: totalQuestions, 
         },
       });
     }
 
-    // Pass the EXACT values to parent component
     onComplete(passed, correctAnswers, totalQuestions);
   }, [questions, selectedAnswers, currentSession, updateSession, onComplete, moduleId]);
+
 
   const selectedAnswer = selectedAnswers[currentQuestion.id];
   const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
@@ -1199,10 +1187,7 @@ const MultipleChoiceQuiz = ({
     0,
   );
 
-  const scorePercentage =
-    questions.length > 0
-      ? Math.round((currentScore / questions.length) * 100)
-      : 0;
+  const scorePercentage = Math.round((currentScore / questions.length) * 100);
 
   return (
     <div

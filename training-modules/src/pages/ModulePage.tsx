@@ -98,7 +98,7 @@ const moduleConfigs: Record<string, ModuleConfig> = {
       rate: true,
       aOutput: true, // Needed to demonstrate turning it off
       vOutput: true,
-      aSensitivity: false, // A fib makes atrial sensing irrelevant
+      aSensitivity: true, // A fib makes atrial sensing irrelevant
       vSensitivity: true,
     },
   },
@@ -457,10 +457,7 @@ const ModulePage = () => {
       if (!currentSession) return;
 
       const actualSuccess = success;
-      const finalScore = actualSuccess
-        ? Math.round((quizScore.score / quizScore.total) * 100)
-        : 0;
-
+      
       setIsSuccess(actualSuccess);
       setShowCompletion(true);
 
@@ -469,7 +466,7 @@ const ModulePage = () => {
           endSession(
             currentSession.id,
             actualSuccess,
-            finalScore,
+            quizScore.score,
             quizScore.total,
           );
         } catch (error) {

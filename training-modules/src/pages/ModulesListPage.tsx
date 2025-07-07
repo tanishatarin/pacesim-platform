@@ -151,8 +151,10 @@ const ModulesListPage = () => {
       const averageScore =
         sessionsWithQuiz.length > 0
           ? sessionsWithQuiz.reduce(
-              (sum, s) =>
-                sum + (s.quizState!.score / s.quizState!.totalQuestions) * 100,
+              (sum, s) => {
+                const percentage = (s.quizState!.score / s.quizState!.totalQuestions) * 100;
+                return sum + percentage;
+              },
               0,
             ) / sessionsWithQuiz.length
           : undefined;
