@@ -1486,7 +1486,6 @@
 
 
 
-
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -1591,7 +1590,7 @@ const moduleConfigs: Record<string, ModuleConfig> = {
   },
 };
 
-// Custom slider component (unchanged)
+// Custom slider component
 const CustomSlider = ({
   label,
   value,
@@ -1973,6 +1972,7 @@ const ModulePage = () => {
 
       handleParameterChange(param, oldValue, value);
 
+      // FIXED: Only send to hardware if connected, don't create loops
       if (isConnected) {
         const paramMap: Record<string, string> = {
           aOutput: "a_output",
@@ -1983,6 +1983,7 @@ const ModulePage = () => {
         };
 
         const wsParam = paramMap[param] || param;
+        console.log("📡 Sending to hardware:", wsParam, "=", value);
         sendControlUpdate({ [wsParam]: value } as any);
       }
     },
@@ -2173,32 +2174,7 @@ const ModulePage = () => {
     console.log("📊 Keeping ECG params at module initial values for consistency");
   }, [currentSession?.id, isPageReady, quizCompleted]);
 
-  // SIMPLIFIED WebSocket sync - only sync to hardware when connected, don't restore from hardware
-  useEffect(() => {
-    if (isConnected && pacemakerState) {
-      // Sync our current params TO hardware (not FROM hardware)
-      const currentParams = pacemakerParams;
-      
-      // Only update hardware if different
-      const needsUpdate = 
-        Math.abs(pacemakerState.rate - currentParams.rate) > 0.1 ||
-        Math.abs(pacemakerState.a_output - currentParams.aOutput) > 0.1 ||
-        Math.abs(pacemakerState.v_output - currentParams.vOutput) > 0.1 ||
-        Math.abs(pacemakerState.aSensitivity - currentParams.aSensitivity) > 0.1 ||
-        Math.abs(pacemakerState.vSensitivity - currentParams.vSensitivity) > 0.1;
-
-      if (needsUpdate) {
-        console.log("🔄 Syncing current params TO hardware");
-        sendControlUpdate({
-          rate: currentParams.rate,
-          a_output: currentParams.aOutput,
-          v_output: currentParams.vOutput,
-          aSensitivity: currentParams.aSensitivity,
-          vSensitivity: currentParams.vSensitivity,
-        });
-      }
-    }
-  }, [isConnected, pacemakerState, pacemakerParams, sendControlUpdate]);
+  // REMOVED: The problematic WebSocket sync useEffect that was causing the parameter reset loop
 
   // Sensor state logic (unchanged)
   useEffect(() => {
@@ -2466,6 +2442,9 @@ const ModulePage = () => {
                 vOutput={ecgParams.vOutput}
                 sensitivity={ecgParams.aSensitivity}
                 mode={currentModule.mode}
+                currentStep={currentStep}
+                currentStepIndex={currentStepIndex}
+                quizCompleted={quizCompleted}
               />
             </div>
 
@@ -2521,7 +2500,7 @@ const ModulePage = () => {
               </div>
             )}
 
-            {((!isConnected && connectionMode !== "pacemaker")) && quizCompleted && (
+            {(!isConnected || connectionMode !== "pacemaker") && quizCompleted && (
               <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">
                 <h3 className="font-bold text-lg mb-6 flex items-center">
                   <span className="w-3 h-3 bg-blue-500 rounded-full mr-3 animate-pulse"></span>
@@ -2533,7 +2512,7 @@ const ModulePage = () => {
                   )}
                   {steps.length > 0 && stepControllerInitialized && (
                     <span className="ml-3 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      On Step {currentStepIndex + 1}/{steps.length} •{" "}
+                      Step {currentStepIndex + 1}/{steps.length} •{" "}
                       {getProgressPercentage()}% Complete
                     </span>
                   )}
@@ -2600,6 +2579,7 @@ const ModulePage = () => {
             )}
 
             <div className="space-y-2">
+              <h3 className="font-bold text-lg">Knowledge Assessment</h3>
               <MultipleChoiceQuiz
                 moduleId={parseInt(moduleId)}
                 onComplete={handleQuizComplete}

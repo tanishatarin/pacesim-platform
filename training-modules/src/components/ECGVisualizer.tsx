@@ -14,6 +14,10 @@ interface ECGVisualizerProps {
   vOutput?: number;
   sensitivity?: number;
   mode?: "sensitivity" | "third_degree_block" | "atrial_fibrillation";
+  // ADD THESE PROPS TO FIX THE PHASE DETECTION:
+  currentStep?: ModuleStep | null;
+  currentStepIndex?: number;
+  quizCompleted?: boolean; // To force quiz mode when false
 }
 
 const speedMultipliers: Record<string, number> = {
@@ -31,6 +35,9 @@ const ECGVisualizer = ({
   vOutput = 5,
   sensitivity = 1,
   mode = "sensitivity",
+  currentStep = null,
+  currentStepIndex = 0,
+  quizCompleted = false, // Default to quiz mode
 }: ECGVisualizerProps) => {
   type Point = { x: number; y: number };
 
@@ -65,6 +72,9 @@ const ECGVisualizer = ({
       aOutput,
       vOutput,
       sensitivity,
+      currentStep: currentStep?.id || "none",
+      currentStepIndex,
+      quizCompleted,
     });
 
     let result: Point[] = [];
@@ -77,6 +87,9 @@ const ECGVisualizer = ({
           aOutput,
           vOutput,
           sensitivity,
+          // PASS THE STEP INFO TO FIX PHASE DETECTION:
+          currentStep: quizCompleted ? currentStep : null, // Force quiz mode if quiz not completed
+          currentStepIndex: quizCompleted ? currentStepIndex : 0,
         });
         break;
 
@@ -87,6 +100,8 @@ const ECGVisualizer = ({
           aOutput,
           vOutput,
           sensitivity,
+          currentStep: quizCompleted ? currentStep : null,
+          currentStepIndex: quizCompleted ? currentStepIndex : 0,
         });
         break;
 
@@ -97,6 +112,8 @@ const ECGVisualizer = ({
           aOutput,
           vOutput,
           sensitivity,
+          currentStep: quizCompleted ? currentStep : null,
+          currentStepIndex: quizCompleted ? currentStepIndex : 0,
         });
         break;
 
@@ -111,6 +128,8 @@ const ECGVisualizer = ({
           aOutput,
           vOutput,
           sensitivity,
+          currentStep: quizCompleted ? currentStep : null,
+          currentStepIndex: quizCompleted ? currentStepIndex : 0,
         });
         break;
     }
@@ -126,7 +145,7 @@ const ECGVisualizer = ({
 
   const points = useMemo(
     () => generatePoints(),
-    [rate, aOutput, vOutput, sensitivity, mode],
+    [rate, aOutput, vOutput, sensitivity, mode, currentStep?.id, currentStepIndex, quizCompleted],
   );
 
   useEffect(() => {
@@ -165,15 +184,14 @@ const ECGVisualizer = ({
               <path
                 d="M 4 0 L 0 0 0 4"
                 fill="none"
-                stroke="red"
-                strokeWidth="0.2"
-                opacity="0.3"
+                stroke="#333"
+                strokeWidth="0.5"
               />
             </pattern>
 
-            {/* Big 5mm grid */}
+            {/* Large 5mm grid */}
             <pattern
-              id="bigGrid"
+              id="largeGrid"
               width="20"
               height="20"
               patternUnits="userSpaceOnUse"
@@ -182,49 +200,28 @@ const ECGVisualizer = ({
               <path
                 d="M 20 0 L 0 0 0 20"
                 fill="none"
-                stroke="red"
-                strokeWidth="0.8"
-                opacity="0.5"
+                stroke="#666"
+                strokeWidth="1"
               />
             </pattern>
           </defs>
 
-          {/* Fill background */}
-          <rect width="100%" height="100%" fill="url(#bigGrid)" />
+          <rect width="100%" height="100%" fill="url(#largeGrid)" />
         </svg>
       </div>
 
-      <div className="absolute inset-0 z-10">
+      <div className="relative z-10 h-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            key={`${rate}-${aOutput}-${vOutput}-${sensitivity}-${mode}`}
-            data={data}
-            margin={{ top: 0, right: 0, left: -20, bottom: 0 }}
-          >
-            <XAxis
-              dataKey="x"
-              tick={false}
-              axisLine={false}
-              stroke="transparent"
-              allowDataOverflow={true}
-              interval={0}
-              padding={{ left: 0, right: 0 }}
-            />
-            <YAxis
-              domain={[-2, 5]}
-              tick={false}
-              axisLine={false}
-              stroke="transparent"
-              allowDataOverflow={true}
-              padding={{ top: 0, bottom: 0 }}
-            />
+          <LineChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <XAxis hide />
+            <YAxis hide domain={[-2, 2]} />
             <Line
               type="linear"
               dataKey="y"
               stroke="#00ff00"
               strokeWidth={2}
               dot={false}
-              isAnimationActive={false}
+              connectNulls={false}
             />
           </LineChart>
         </ResponsiveContainer>
