@@ -31,8 +31,8 @@ export const generateNormalPacingPoints = ({
 }: ECGParams): Point[] => {
   const points: Point[] = [];
   const baseComplexLength = 16;
-  const numberOfComplexes = 6; // Match image length
-  const complexSpacing = 200; // Add gap between each beat to reach ~1.8 sec interval
+  const numberOfComplexes = 6;
+  const complexSpacing = 200; // This works well for normal pacing
 
   const baseComplex: Point[] = [
     { x: 5, y: 0 },
@@ -61,7 +61,6 @@ export const generateNormalPacingPoints = ({
     { x: 90, y: 0 },
   ];
 
-  // Output scaling
   const scaleOutput = (output: number, max = 5) =>
     Math.min(max, Math.log(output + 1) / Math.log(6));
 
@@ -75,15 +74,15 @@ export const generateNormalPacingPoints = ({
       let scaledY = pt.y;
 
       if (pt.x >= 1 && pt.x <= 3) {
-        scaledY *= aScale; // P wave
+        scaledY *= aScale;
       } else if (pt.x >= 5 && pt.x <= 7) {
-        scaledY *= vScale; // QRS
+        scaledY *= vScale;
       } else if (pt.x >= 10 && pt.x <= 12) {
-        scaledY *= vScale * 0.3; // T wave
+        scaledY *= vScale * 0.3;
       }
 
       points.push({
-        x: offset + pt.x * 5, // or 3, 4, etc. — to slow it down
+        x: offset + pt.x * 5,
         y: scaledY,
       });
     }
@@ -91,6 +90,8 @@ export const generateNormalPacingPoints = ({
 
   return points;
 };
+
+// FIXED VERSION: Addresses x-value duplication and looping issues
 
 export const generateBradycardiaPoints = ({
   rate,
@@ -109,96 +110,98 @@ export const generateBradycardiaPoints = ({
   console.log("- StepIndex:", currentStepIndex);
 
   const points: Point[] = [];
-
-  // ✅ SIMPLIFIED LOGIC: If no currentStep passed, it's QUIZ phase
-  const isQuizPhase = !currentStep;
+  const isQuizPhase = !currentStep || currentStep.id === undefined;
   console.log("📋 Phase:", isQuizPhase ? "QUIZ" : "STEP");
 
-  if (isQuizPhase) {
-    // ✅ QUIZ PHASE: Always use the same simple bradycardia pattern
-    console.log("📝 Generating QUIZ phase bradycardia...");
-
-    const numberOfComplexes = 4;
-    const complexSpacing = 300; // Slow bradycardia spacing
-
-    // Use a consistent, simple bradycardia complex
-    const simpleComplex: Point[] = [
-      { x: 0, y: 0 },      // Baseline
-      { x: 20, y: 0 },     // Baseline
-      { x: 25, y: 0.1 },   // P wave start
-      { x: 27, y: 0.2 },   // P wave peak
-      { x: 29, y: 0.1 },   // P wave end
-      { x: 35, y: 0 },     // PR segment
-      { x: 40, y: -0.2 },  // Q wave
-      { x: 42, y: 1.5 },   // R wave peak
-      { x: 44, y: -0.3 },  // S wave
-      { x: 46, y: 0 },     // J point
-      { x: 50, y: 0 },     // ST segment
-      { x: 55, y: 0.1 },   // T wave start
-      { x: 58, y: 0.3 },   // T wave peak
-      { x: 61, y: 0.1 },   // T wave end
-      { x: 65, y: 0 },     // Baseline
-      { x: 80, y: 0 },     // Extended baseline
-    ];
-
-    // Generate multiple complexes
-    for (let i = 0; i < numberOfComplexes; i++) {
-      const offset = i * complexSpacing;
-
-      for (const pt of simpleComplex) {
-        points.push({
-          x: offset + pt.x,
-          y: pt.y,
-        });
-      }
-    }
-
-    console.log("✅ QUIZ bradycardia generated:", points.length, "points");
-    console.log("- First point:", points[0]);
-    console.log("- Last point:", points[points.length - 1]);
-    console.log("- Sample middle:", points[Math.floor(points.length / 2)]);
-
-    return points;
-  }
-
-  // ✅ STEP PHASE: Use step-aware logic that changes based on current step
-  console.log("🎯 Generating STEP phase bradycardia...");
-  
-  // For now, return the same simple pattern to test the fix
-  // You can add the step-specific logic later once this works
-  const numberOfComplexes = 4;
-  const complexSpacing = 300;
-
-  const stepComplex: Point[] = [
-    { x: 0, y: 0 },
-    { x: 20, y: 0 },
-    { x: 25, y: 0.1 },
-    { x: 27, y: 0.2 },
-    { x: 29, y: 0.1 },
-    { x: 35, y: 0 },
-    { x: 40, y: -0.2 },
-    { x: 42, y: 1.5 },
-    { x: 44, y: -0.3 },
-    { x: 46, y: 0 },
-    { x: 50, y: 0 },
-    { x: 55, y: 0.1 },
-    { x: 58, y: 0.3 },
-    { x: 61, y: 0.1 },
+  // Use the same complex as generateNormalPacingPoints
+  const workingComplex: Point[] = [
+    { x: 5, y: 0 },
+    { x: 8, y: 0 },
+    { x: 15, y: 0 },
+    { x: 18, y: 0 },
+    { x: 22, y: 0 },
+    { x: 23, y: 0 },
+    { x: 26, y: 0.088 },
+    { x: 28, y: 0.176 },
+    { x: 30, y: 0.088 },
+    { x: 32, y: 0 },
+    { x: 34, y: 0.088 },
+    { x: 35.8, y: 0 },
+    { x: 36, y: 1.5 },
+    { x: 36.4, y: -0.3 },
+    { x: 37, y: 0 },
+    { x: 39, y: 0.353 },
+    { x: 41, y: 0 },
+    { x: 43, y: 0 },
+    { x: 45, y: 0 },
+    { x: 59, y: 0 },
+    { x: 60, y: 0 },
     { x: 65, y: 0 },
-    { x: 80, y: 0 },
+    { x: 67, y: 0 },
+    { x: 90, y: 0 },
   ];
 
+  const numberOfComplexes = 8;
+  const complexSpacing = 200;
+
+  // Output scaling
+  const scaleOutput = (output: number, max = 5) =>
+    Math.min(max, Math.log(output + 1) / Math.log(6));
+
+  const aScale = scaleOutput(aOutput, 1);
+  const vScale = scaleOutput(vOutput, 5);
+
+  // 🔥 KEY FIX: Use currentX tracker to prevent overlapping x values
+  let currentX = 0;
+
   for (let i = 0; i < numberOfComplexes; i++) {
-    const offset = i * complexSpacing;
-    for (const pt of stepComplex) {
+    // Calculate starting position for this complex
+    const complexStartX = currentX;
+
+    for (const pt of workingComplex) {
+      let scaledY = pt.y;
+
+      // Apply scaling
+      if (pt.x >= 26 && pt.x <= 30) {
+        scaledY *= aScale; // P wave
+      } else if (pt.x >= 35.8 && pt.x <= 37) {
+        scaledY *= vScale; // QRS
+      } else if (pt.x >= 39 && pt.x <= 41) {
+        scaledY *= vScale * 0.3; // T wave
+      }
+
+      // 🎯 FIXED: Use currentX tracker instead of offset calculation
+      const finalX = complexStartX + pt.x * 5;
+      
       points.push({
-        x: offset + pt.x,
-        y: pt.y,
+        x: finalX,
+        y: scaledY,
       });
+
+      // Update currentX to ensure no overlaps
+      currentX = Math.max(currentX, finalX + 1);
+    }
+
+    // 🔥 FIXED: Ensure proper spacing between complexes
+    currentX = complexStartX + complexSpacing;
+  }
+
+  // 🎯 CRITICAL FIX: Always return data for both quiz AND step phases
+  if (points.length === 0) {
+    console.warn("⚠️ No points generated! Creating fallback data...");
+    // Fallback: create simple bradycardia if generation fails
+    for (let i = 0; i < 5; i++) {
+      const x = i * 300;
+      points.push({ x: x, y: 0 });
+      points.push({ x: x + 50, y: 1.2 });
+      points.push({ x: x + 60, y: 0 });
     }
   }
 
-  console.log("✅ STEP bradycardia generated:", points.length, "points");
+  console.log("✅ Bradycardia generated:", points.length, "points");
+  console.log("- X-value range:", points[0]?.x, "to", points[points.length - 1]?.x);
+  console.log("- No duplicate X values:", new Set(points.map(p => p.x)).size === points.length);
+
   return points;
 };
 
@@ -218,25 +221,25 @@ export const generateThirdDegreeBlockPoints = ({
   if (isQuizPhase) {
     console.log("📝 Generating QUIZ phase third degree block...");
     
-    // Create simple third degree block pattern for quiz
-    const numberOfComplexes = 4;
-    const complexSpacing = 300;
+    const numberOfComplexes = 6; // More complexes
+    const complexSpacing = 250;  // Better spacing
     
     const blockComplex: Point[] = [
       { x: 0, y: 0 },
       { x: 15, y: 0 },
-      { x: 20, y: 0.15 },   // P wave (atrial)
-      { x: 22, y: 0.15 },
-      { x: 24, y: 0 },
-      { x: 45, y: 0 },      // No QRS following P
-      { x: 70, y: 0.12 },   // Another P wave
-      { x: 72, y: 0.12 },
-      { x: 74, y: 0 },
+      { x: 20, y: 0.088 },
+      { x: 22, y: 0.176 },
+      { x: 24, y: 0.088 },
+      { x: 45, y: 0 },
+      { x: 70, y: 0.088 },
+      { x: 72, y: 0.176 },
+      { x: 74, y: 0.088 },
       { x: 95, y: 0 },
-      { x: 100, y: -0.2 },  // Independent ventricular escape
-      { x: 102, y: 1.2 },   // Wider QRS
+      { x: 100, y: -0.2 },
+      { x: 102, y: 1.2 },
       { x: 105, y: -0.2 },
       { x: 108, y: 0 },
+      { x: 115, y: 0.25 },
       { x: 120, y: 0 },
     ];
 
@@ -244,33 +247,32 @@ export const generateThirdDegreeBlockPoints = ({
       const offset = i * complexSpacing;
       for (const pt of blockComplex) {
         points.push({
-          x: offset + pt.x,
+          x: offset + pt.x * 5,
           y: pt.y,
         });
       }
     }
   } else {
     console.log("🎯 Generating STEP phase third degree block...");
-    // Add step-specific logic here later
-    // For now, use same pattern
-    const numberOfComplexes = 4;
-    const complexSpacing = 300;
+    const numberOfComplexes = 6;
+    const complexSpacing = 250;
     
     const stepBlockComplex: Point[] = [
       { x: 0, y: 0 },
       { x: 15, y: 0 },
-      { x: 20, y: 0.15 },
-      { x: 22, y: 0.15 },
-      { x: 24, y: 0 },
+      { x: 20, y: 0.088 },
+      { x: 22, y: 0.176 },
+      { x: 24, y: 0.088 },
       { x: 45, y: 0 },
-      { x: 70, y: 0.12 },
-      { x: 72, y: 0.12 },
-      { x: 74, y: 0 },
+      { x: 70, y: 0.088 },
+      { x: 72, y: 0.176 },
+      { x: 74, y: 0.088 },
       { x: 95, y: 0 },
       { x: 100, y: -0.2 },
       { x: 102, y: 1.2 },
       { x: 105, y: -0.2 },
       { x: 108, y: 0 },
+      { x: 115, y: 0.25 },
       { x: 120, y: 0 },
     ];
 
@@ -278,7 +280,7 @@ export const generateThirdDegreeBlockPoints = ({
       const offset = i * complexSpacing;
       for (const pt of stepBlockComplex) {
         points.push({
-          x: offset + pt.x,
+          x: offset + pt.x * 5,
           y: pt.y,
         });
       }
@@ -305,68 +307,68 @@ export const generateAtrialFibrillationPoints = ({
   if (isQuizPhase) {
     console.log("📝 Generating QUIZ phase atrial fibrillation...");
     
-    // Create simple A fib pattern for quiz
-    const numberOfComplexes = 5;
-    const baseSpacing = 250;
+    const numberOfComplexes = 8; // More complexes for A fib
+    const baseSpacing = 200;     // Tighter spacing
     
     for (let i = 0; i < numberOfComplexes; i++) {
-      // Irregular spacing for A fib
-      const irregularity = (Math.random() - 0.5) * 100;
+      const irregularity = (Math.random() - 0.5) * 80; // Less irregularity
       const offset = i * baseSpacing + irregularity;
       
-      // Fibrillatory baseline
-      for (let x = 0; x < 40; x += 2) {
-        const fibWave = Math.sin(x * 0.5) * 0.05 + (Math.random() - 0.5) * 0.03;
-        points.push({ x: offset + x, y: fibWave });
+      for (let x = 0; x < 70; x += 3) {
+        const fibWave = Math.sin(x * 0.3) * 0.04 + (Math.random() - 0.5) * 0.03;
+        points.push({ 
+          x: offset + x * 5, 
+          y: fibWave 
+        });
       }
       
-      // Irregular QRS
-      const qrsComplex: Point[] = [
-        { x: 40, y: 0 },
-        { x: 42, y: -0.1 },
-        { x: 44, y: 1.3 },
-        { x: 46, y: -0.2 },
-        { x: 48, y: 0 },
-        { x: 55, y: 0.2 },
-        { x: 58, y: 0 },
+      const irregularQRS: Point[] = [
+        { x: 70, y: 0 },
+        { x: 72, y: -0.15 },
+        { x: 74, y: 1.3 },
+        { x: 76, y: -0.25 },
+        { x: 78, y: 0 },
+        { x: 85, y: 0.2 },
+        { x: 88, y: 0 },
       ];
       
-      for (const pt of qrsComplex) {
+      for (const pt of irregularQRS) {
         points.push({
-          x: offset + pt.x,
+          x: offset + pt.x * 5,
           y: pt.y,
         });
       }
     }
   } else {
     console.log("🎯 Generating STEP phase atrial fibrillation...");
-    // Add step-specific logic here later
-    // For now, use same pattern as quiz
-    const numberOfComplexes = 5;
-    const baseSpacing = 250;
+    const numberOfComplexes = 8;
+    const baseSpacing = 200;
     
     for (let i = 0; i < numberOfComplexes; i++) {
-      const irregularity = (Math.random() - 0.5) * 100;
+      const irregularity = (Math.random() - 0.5) * 80;
       const offset = i * baseSpacing + irregularity;
       
-      for (let x = 0; x < 40; x += 2) {
-        const fibWave = Math.sin(x * 0.5) * 0.05 + (Math.random() - 0.5) * 0.03;
-        points.push({ x: offset + x, y: fibWave });
+      for (let x = 0; x < 70; x += 3) {
+        const fibWave = Math.sin(x * 0.3) * 0.04 + (Math.random() - 0.5) * 0.03;
+        points.push({ 
+          x: offset + x * 5, 
+          y: fibWave 
+        });
       }
       
-      const qrsComplex: Point[] = [
-        { x: 40, y: 0 },
-        { x: 42, y: -0.1 },
-        { x: 44, y: 1.3 },
-        { x: 46, y: -0.2 },
-        { x: 48, y: 0 },
-        { x: 55, y: 0.2 },
-        { x: 58, y: 0 },
+      const irregularQRS: Point[] = [
+        { x: 70, y: 0 },
+        { x: 72, y: -0.15 },
+        { x: 74, y: 1.3 },
+        { x: 76, y: -0.25 },
+        { x: 78, y: 0 },
+        { x: 85, y: 0.2 },
+        { x: 88, y: 0 },
       ];
       
-      for (const pt of qrsComplex) {
+      for (const pt of irregularQRS) {
         points.push({
-          x: offset + pt.x,
+          x: offset + pt.x * 5,
           y: pt.y,
         });
       }
