@@ -709,7 +709,6 @@
 
 
 
-
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSession } from "../hooks/useSession";
@@ -729,15 +728,15 @@ interface MultipleChoiceQuizProps {
   className?: string;
 }
 
-// Quiz data by module
+// Quiz data by module - updated with your current questions
 const quizData: Record<number, QuizQuestion[]> = {
   1: [
     {
       id: "scenario1_q1",
-      question: "What condition is indicated by this ECG?",
+      question: "What condition is indicated by this ECG rhythm?",
       options: [
         "Third Degree Block",
-        "Failure to capture",
+        "Failure to capture", 
         "Bradycardia",
         "Atrial fibrillation",
       ],
@@ -769,101 +768,112 @@ const quizData: Record<number, QuizQuestion[]> = {
         "AAI mode is appropriate when you have atrial leads and want atrial pacing with inhibition based on sensed atrial activity.",
     },
   ],
-
-  // Module 2: Third Degree Block
   2: [
     {
-      id: "third_degree_q1",
-      question: "What condition is indicated by this ECG rhythm?",
+      id: "scenario2_q1",
+      question: "What is the primary issue shown in this ECG pattern?",
       options: [
-        "Sinus bradycardia",
-        "Junctional rhythm",
-        "Third degree heart block",
-        "Second degree heart block",
+        "Oversensing",
+        "Undersensing",
+        "Battery failure",
+        "Lead fracture",
       ],
-      correctAnswer: 2,
+      correctAnswer: 0,
       explanation:
-        "Third degree heart block shows complete AV dissociation - P waves and QRS complexes occur independently with no relationship between them.",
+        "Oversensing occurs when the pacemaker detects signals that shouldn't inhibit pacing, leading to inappropriate inhibition.",
     },
     {
-      id: "third_degree_q2",
-      question:
-        "What is the most appropriate initial pacing mode for this patient with only ventricular leads?",
-      options: ["AAI", "VVI", "DDD", "DOO"],
-      correctAnswer: 1,
-      explanation:
-        "VVI mode is appropriate when only ventricular leads are available. It provides ventricular pacing with inhibition based on sensed ventricular activity.",
-    },
-    {
-      id: "third_degree_q3",
-      question: "What is the primary hemodynamic concern with this rhythm?",
+      id: "scenario2_q2",
+      question: "How would you correct oversensing?",
       options: [
-        "Tachycardia",
-        "Loss of AV synchrony and slow rate",
-        "Atrial fibrillation",
-        "Ventricular tachycardia",
+        "Increase sensitivity",
+        "Decrease sensitivity",
+        "Increase pacing rate",
+        "Replace the battery",
       ],
       correctAnswer: 1,
       explanation:
-        "Third degree block causes loss of AV synchrony and often results in slow ventricular escape rhythms, leading to reduced cardiac output and hypotension.",
+        "Decreasing sensitivity makes the pacemaker less sensitive to small signals that may cause inappropriate inhibition.",
     },
   ],
-
-  // Module 3: Atrial Fibrillation
   3: [
     {
-      id: "afib_q1",
-      question: "Why is atrial pacing inappropriate in this rhythm?",
+      id: "scenario3_q1",
+      question: "What adjustment is needed to correct undersensing?",
       options: [
-        "The atrial rate is too fast",
-        "Atrial activity is chaotic and unorganized",
-        "The patient has heart block",
-        "The ventricular rate is too slow",
+        "Increase sensitivity",
+        "Decrease sensitivity",
+        "Change pacing mode",
+        "Replace battery",
       ],
+      correctAnswer: 0,
+      explanation:
+        "Increasing sensitivity makes the pacemaker more sensitive to detect smaller intrinsic cardiac signals.",
+    },
+    {
+      id: "scenario3_q2",
+      question: "What could be a cause of undersensing?",
+      options: [
+        "Lead displacement",
+        "Electromagnetic interference",
+        "Low battery",
+        "All of the above",
+      ],
+      correctAnswer: 3,
+      explanation:
+        "All of these factors can contribute to undersensing by affecting the pacemaker's ability to detect intrinsic cardiac activity.",
+    },
+  ],
+  4: [
+    {
+      id: "capture_q1",
+      question: "What indicates successful cardiac capture?",
+      options: [
+        "Pacing spike followed by QRS complex",
+        "Pacing spike only",
+        "No pacing spike visible",
+        "Irregular heart rhythm",
+      ],
+      correctAnswer: 0,
+      explanation:
+        "Successful capture is indicated by a pacing spike followed by an appropriate cardiac response (QRS for ventricular pacing, P-wave for atrial pacing).",
+    },
+    {
+      id: "capture_q2",
+      question:
+        "What is the typical starting point for capture threshold testing?",
+      options: ["1.0 mA", "5.0 mA", "10.0 mA", "20.0 mA"],
       correctAnswer: 1,
       explanation:
-        "In atrial fibrillation, atrial activity is chaotic and disorganized. Atrial pacing cannot restore organized atrial contraction or improve AV synchrony.",
+        "Capture threshold testing typically starts at 5.0 mA and is gradually decreased until loss of capture occurs.",
+    },
+  ],
+  5: [
+    {
+      id: "failure_capture_q1",
+      question: "How do you correct failure to capture?",
+      options: [
+        "Increase pacing output",
+        "Decrease pacing output",
+        "Increase sensitivity",
+        "Check battery only",
+      ],
+      correctAnswer: 0,
+      explanation:
+        "Failure to capture is corrected by increasing the pacing output (mA) to provide sufficient energy to stimulate the heart muscle.",
     },
     {
-      id: "afib_q2",
-      question: "What caused the bradycardia in this A fib patient?",
+      id: "failure_capture_q2",
+      question: "What could cause failure to capture?",
       options: [
-        "Progression of heart disease",
-        "Rate control medications (amiodarone and metoprolol)",
-        "Electrolyte imbalance",
-        "Cardiac tamponade",
+        "Lead displacement",
+        "Inadequate output energy",
+        "Scar tissue at electrode site",
+        "All of the above",
       ],
-      correctAnswer: 1,
+      correctAnswer: 3,
       explanation:
-        "The patient received amiodarone and metoprolol for rate control of rapid A fib, which over-suppressed the ventricular response, causing bradycardia.",
-    },
-    {
-      id: "afib_q3",
-      question:
-        "What is the most appropriate pacing mode for A fib with bradycardia?",
-      options: [
-        "AAI - atrial pacing only",
-        "DDD - dual chamber pacing",
-        "VVI - ventricular pacing with inhibition",
-        "DOO - dual chamber asynchronous",
-      ],
-      correctAnswer: 2,
-      explanation:
-        "VVI mode is ideal for A fib because it provides backup ventricular pacing when needed while ignoring the chaotic atrial activity. Atrial pacing modes are ineffective in A fib.",
-    },
-    {
-      id: "afib_q4",
-      question:
-        "What should be done with the atrial output setting in this patient?",
-      options: [
-        "Increase it to maximum",
-        "Set it to normal levels",
-        "Turn it off completely",
-        "Decrease it slightly",
-      ],
-      correctAnswer: 2,
-      explanation:
-        "Atrial output should be turned off in A fib patients because atrial pacing provides no benefit and may cause unnecessary energy consumption and potential complications.",
+        "All of these factors can prevent the pacemaker from successfully capturing and stimulating the heart muscle.",
     },
   ],
 };
@@ -892,37 +902,27 @@ const MultipleChoiceQuiz = ({
   const questions = quizData[moduleId] || [];
   const currentQuestion = questions[currentQuestionIndex];
 
-  // 🔥 FIX: Reset quiz state when moduleId or session changes
-  useEffect(() => {
-    console.log("🔄 Quiz: Module or session changed, resetting quiz state");
-    setCurrentQuestionIndex(0);
-    setSelectedAnswers({});
-    setQuestionsRevealed({});
-    setQuizCompleted(false);
-    setShowReviewMode(false);
-    setSessionReady(false);
-  }, [moduleId, currentSession?.id]);
-
-  // 🔥 FIX: Only restore state if it's the SAME session and SAME module
+  // Restore quiz state from session
   useEffect(() => {
     if (!currentSession?.quizState || questions.length === 0) return;
 
-    // 🚨 CRITICAL: Only restore if this session is for the current module
-    if (currentSession.moduleId !== moduleId.toString()) {
-      console.log("⚠️ Session module mismatch, not restoring quiz state");
+    const { quizState } = currentSession;
+
+    // 🔥 KEY FIX: Don't restore if we're already in a completed state
+    if (quizCompleted && showReviewMode) {
+      console.log("🔒 Quiz already completed locally, skipping session restore");
       return;
     }
 
-    const { quizState } = currentSession;
-
     if (quizState.isCompleted) {
-      console.log("📝 Restoring completed quiz state for same session/module");
+      console.log("📝 Restoring completed quiz state");
       setQuizCompleted(true);
       setShowReviewMode(true);
 
       const restoredAnswers: Record<string, number> = {};
       const restoredRevealed: Record<string, boolean> = {};
 
+      // 🔥 KEY FIX: Restore the actual answers, not just mark as revealed
       quizState.answers.forEach((answer) => {
         const question = questions[answer.questionIndex];
         if (question) {
@@ -934,7 +934,7 @@ const MultipleChoiceQuiz = ({
       setSelectedAnswers(restoredAnswers);
       setQuestionsRevealed(restoredRevealed);
     } else {
-      console.log("📝 Restoring in-progress quiz state for same session/module");
+      console.log("📝 Restoring in-progress quiz state");
       setCurrentQuestionIndex(quizState.currentQuestionIndex || 0);
 
       const restoredAnswers: Record<string, number> = {};
@@ -953,7 +953,23 @@ const MultipleChoiceQuiz = ({
       setSelectedAnswers(restoredAnswers);
       setQuestionsRevealed(restoredRevealed);
     }
-  }, [currentSession?.id, currentSession?.moduleId, moduleId, questions.length]);
+  }, [currentSession?.id, questions.length, quizCompleted, showReviewMode]);
+
+  // Reset when moduleId changes - but NOT if quiz is already completed
+  useEffect(() => {
+    if (quizCompleted) {
+      console.log("🔒 Quiz already completed, not resetting state");
+      return;
+    }
+    
+    console.log("🔄 Module changed, resetting quiz state");
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers({});
+    setQuestionsRevealed({});
+    setQuizCompleted(false);
+    setShowReviewMode(false);
+    setSessionReady(false);
+  }, [moduleId, quizCompleted]);
 
   if (!currentQuestion) {
     return (
@@ -967,10 +983,10 @@ const MultipleChoiceQuiz = ({
     );
   }
 
-  // 🔥 FIX: Create session only when needed and ensure it's for the right module
+  // Create session only when needed
   const ensureSession = () => {
     if (!currentSession && currentUser && !sessionReady) {
-      console.log("🚀 Creating new session for quiz, module:", moduleId);
+      console.log("🚀 Creating session for quiz");
       const sessionId = startSession(moduleId.toString(), `Module ${moduleId}`);
       setSessionReady(true);
       return sessionId;
@@ -1013,7 +1029,7 @@ const MultipleChoiceQuiz = ({
             {
               questionIndex: currentQuestionIndex,
               selectedAnswer: answerIndex,
-              isCorrect: false,
+              isCorrect: false, // Will be updated on submit
               timestamp: new Date().toISOString(),
             },
           ];
@@ -1035,7 +1051,6 @@ const MultipleChoiceQuiz = ({
       currentSession,
       currentQuestionIndex,
       updateSession,
-      moduleId,
     ],
   );
 
@@ -1139,55 +1154,64 @@ const MultipleChoiceQuiz = ({
     let correctAnswers = 0;
     questions.forEach((question) => {
       if (selectedAnswers[question.id] === question.correctAnswer) {
-        correctAnswers++; 
+        correctAnswers++;
       }
     });
 
     const passed = correctAnswers >= Math.ceil(questions.length * 0.7);
-    const totalQuestions = questions.length; 
+
+    console.log("🎉 Quiz completed with score:", correctAnswers, "out of", questions.length);
 
     setQuizCompleted(true);
     setShowReviewMode(true);
 
+    // Update session BEFORE calling onComplete
     if (currentSession) {
       updateSession(currentSession.id, {
         currentStep: "practice",
         quizState: {
           ...currentSession.quizState,
           isCompleted: true,
-          score: correctAnswers,        
-          totalQuestions: totalQuestions, 
+          score: correctAnswers,
+          totalQuestions: questions.length,
         },
       });
     }
 
-    onComplete(passed, correctAnswers, totalQuestions);
-  }, [questions, selectedAnswers, currentSession, updateSession, onComplete, moduleId]);
-
+    // 🔥 FIX: Call onComplete in a timeout to prevent immediate re-render
+    setTimeout(() => {
+      onComplete(passed, correctAnswers, questions.length);
+    }, 100);
+  }, [questions, selectedAnswers, currentSession, updateSession, onComplete]);
 
   const selectedAnswer = selectedAnswers[currentQuestion.id];
-  const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
   const isRevealed = questionsRevealed[currentQuestion.id] || showReviewMode;
   const isAnswered = selectedAnswer !== undefined;
   const allQuestionsAttempted = questions.every(
     (q) => selectedAnswers[q.id] !== undefined,
   );
 
-  // 🔥 FIX: Calculate current score correctly
-  const currentScore = Object.keys(selectedAnswers).reduce(
-    (correct, questionId) => {
-      const question = questions.find((q) => q.id === questionId);
-      return (
-        correct +
-        (question && selectedAnswers[questionId] === question.correctAnswer
-          ? 1
-          : 0)
+  // Calculate current score - use completed score if quiz is done
+  const currentScore = quizCompleted && currentSession?.quizState?.isCompleted 
+    ? currentSession.quizState.score 
+    : Object.keys(selectedAnswers).reduce(
+        (correct, questionId) => {
+          const question = questions.find((q) => q.id === questionId);
+          return (
+            correct +
+            (question && selectedAnswers[questionId] === question.correctAnswer
+              ? 1
+              : 0)
+          );
+        },
+        0,
       );
-    },
-    0,
-  );
 
-  const scorePercentage = Math.round((currentScore / questions.length) * 100);
+  const scorePercentage = quizCompleted && currentSession?.quizState?.isCompleted 
+    ? Math.round((currentSession.quizState.score / currentSession.quizState.totalQuestions) * 100)
+    : questions.length > 0
+      ? Math.round((currentScore / questions.length) * 100)
+      : 0;
 
   return (
     <div
@@ -1210,30 +1234,40 @@ const MultipleChoiceQuiz = ({
           )}
         </div>
 
+        {/* Question navigation circles */}
         <div className="flex items-center space-x-2">
-          {questions.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentQuestionIndex(index)}
-              className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                index === currentQuestionIndex
-                  ? "bg-blue-600 text-white"
-                  : selectedAnswers[questions[index].id] !== undefined
-                    ? selectedAnswers[questions[index].id] ===
-                      questions[index].correctAnswer
-                      ? "bg-green-100 text-green-800 border border-green-300"
-                      : "bg-red-100 text-red-800 border border-red-300"
-                    : "bg-gray-100 text-gray-600 border border-gray-300"
-              }`}
-              disabled={
-                !showReviewMode &&
-                !questionsRevealed[questions[index].id] &&
-                index !== currentQuestionIndex
-              }
-            >
-              {index + 1}
-            </button>
-          ))}
+          {questions.map((_, index) => {
+            const question = questions[index];
+            const userAnswer = selectedAnswers[question.id];
+            const isAnswered = userAnswer !== undefined;
+            const isCurrentQuestion = index === currentQuestionIndex;
+            
+            // 🔥 CRITICAL FIX: Calculate correctness per question
+            const isCorrectAnswer = isAnswered && userAnswer === question.correctAnswer;
+
+            return (
+              <button
+                key={index}
+                onClick={() => setCurrentQuestionIndex(index)}
+                className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                  isCurrentQuestion
+                    ? "bg-blue-600 text-white"
+                    : isAnswered
+                      ? isCorrectAnswer
+                        ? "bg-green-100 text-green-800 border border-green-300"
+                        : "bg-red-100 text-red-800 border border-red-300"
+                      : "bg-gray-100 text-gray-600 border border-gray-300"
+                }`}
+                disabled={
+                  !showReviewMode &&
+                  !questionsRevealed[question.id] &&
+                  index !== currentQuestionIndex
+                }
+              >
+                {index + 1}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -1266,6 +1300,10 @@ const MultipleChoiceQuiz = ({
         {currentQuestion.options.map((option, index) => {
           const isSelected = selectedAnswer === index;
           const isCorrectAnswer = index === currentQuestion.correctAnswer;
+          
+          // 🔥 CRITICAL FIX: Calculate per-option correctness
+          const isSelectedAndCorrect = isSelected && isCorrectAnswer;
+          const isSelectedAndWrong = isSelected && !isCorrectAnswer;
 
           let buttonClass =
             "w-full text-left p-4 rounded-lg border transition-all duration-200 ";
@@ -1275,9 +1313,10 @@ const MultipleChoiceQuiz = ({
               ? "border-blue-500 bg-blue-50 text-blue-900"
               : "border-gray-200 hover:border-gray-300 hover:bg-gray-50";
           } else {
-            if (isSelected && isCorrect) {
+            // 🔥 FIX: Use specific option correctness
+            if (isSelectedAndCorrect) {
               buttonClass += "border-green-500 bg-green-50 text-green-900";
-            } else if (isSelected && !isCorrect) {
+            } else if (isSelectedAndWrong) {
               buttonClass += "border-red-500 bg-red-50 text-red-900";
             } else if (isCorrectAnswer) {
               buttonClass += "border-green-500 bg-green-50 text-green-900";
@@ -1303,8 +1342,8 @@ const MultipleChoiceQuiz = ({
                 <span>{option}</span>
                 {isRevealed && (
                   <span className="text-lg">
-                    {isSelected && isCorrect && "✅"}
-                    {isSelected && !isCorrect && "❌"}
+                    {isSelectedAndCorrect && "✅"}
+                    {isSelectedAndWrong && "❌"}
                     {!isSelected && isCorrectAnswer && "✅"}
                   </span>
                 )}
@@ -1317,19 +1356,31 @@ const MultipleChoiceQuiz = ({
       {/* Explanation */}
       {isRevealed && currentQuestion.explanation && (
         <div
-          className={`p-4 rounded-lg mb-6 ${isCorrect ? "bg-green-50 border border-green-200" : "bg-orange-50 border border-orange-200"}`}
+          className={`p-4 rounded-lg mb-6 ${
+            selectedAnswer !== undefined && selectedAnswer === currentQuestion.correctAnswer
+              ? "bg-green-50 border border-green-200"
+              : "bg-orange-50 border border-orange-200"
+          }`}
         >
           <h5
-            className={`font-medium mb-2 ${isCorrect ? "text-green-800" : "text-orange-800"}`}
+            className={`font-medium mb-2 ${
+              selectedAnswer !== undefined && selectedAnswer === currentQuestion.correctAnswer
+                ? "text-green-800"
+                : "text-orange-800"
+            }`}
           >
-            {isCorrect
+            {selectedAnswer !== undefined && selectedAnswer === currentQuestion.correctAnswer
               ? "✅ Correct!"
               : showReviewMode
                 ? "ℹ️ Explanation:"
                 : "❌ Not quite right"}
           </h5>
           <p
-            className={`text-sm ${isCorrect ? "text-green-700" : "text-orange-700"}`}
+            className={`text-sm ${
+              selectedAnswer !== undefined && selectedAnswer === currentQuestion.correctAnswer
+                ? "text-green-700"
+                : "text-orange-700"
+            }`}
           >
             {currentQuestion.explanation}
           </p>
