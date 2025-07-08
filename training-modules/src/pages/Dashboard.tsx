@@ -127,7 +127,7 @@ const Dashboard = () => {
     );
 
     const totalTime = meaningfulSessions.reduce(
-      (sum, s) => sum + (s.totalTimeSpent || 0),
+      (sum, s) => sum + (s.activeTimeSpent || 0),
       0,
     );
 
@@ -163,7 +163,7 @@ const Dashboard = () => {
       (s) => new Date(s.startedAt).getTime() > oneWeekAgo,
     );
     const currentWeekTime = currentWeekSessions.reduce(
-      (sum, s) => sum + (s.totalTimeSpent || 0),
+      (sum, s) => sum + (s.activeTimeSpent || 0),
       0,
     );
 

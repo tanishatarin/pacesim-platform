@@ -41,6 +41,16 @@ export type PracticeState = {
     vSensitivity: number;
   };
   timeSpentInPractice: number;
+  
+  // NEW: Active time tracking fields
+  activeTimeSpent: number;
+  timeSegments: Array<{
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    activity: 'quiz' | 'practice' | 'reading';
+  }>;
+  
   stepProgress?: {
     currentStepIndex: number;
     completedSteps: string[];
@@ -69,10 +79,11 @@ export type Session = {
   practiceState: PracticeState;
 
   // Overall metrics
-  totalTimeSpent: number;
+  totalTimeSpent: number; // Keep for backwards compatibility (total elapsed time)
+  activeTimeSpent: number; // NEW: Only active interaction time
   hintsUsed: number;
   errorsCount: number;
-  actions: any[]; // Keep for backward compatibility
+  actions: any[];
 };
 
 export type ModuleProgress = {
@@ -100,5 +111,53 @@ const db = new LowSync(adapter, {
 // Initialize
 db.read();
 db.data ||= { users: [], sessions: [], moduleProgress: [] };
+
+// Migration function to add new fields to existing sessions
+export const migrateSessionData = () => {
+  try {
+    console.log('🔄 Starting session data migration...');
+    db.read();
+    
+    let migrationCount = 0;
+    
+    if (db.data?.sessions) {
+      db.data.sessions.forEach((session: any) => {
+        let sessionUpdated = false;
+        
+        // Add missing activeTimeSpent field to session
+        if (session.activeTimeSpent === undefined) {
+          session.activeTimeSpent = 0;
+          sessionUpdated = true;
+        }
+        
+        // Add missing fields to practiceState
+        if (session.practiceState) {
+          if (!session.practiceState.timeSegments) {
+            session.practiceState.timeSegments = [];
+            sessionUpdated = true;
+          }
+          
+          if (session.practiceState.activeTimeSpent === undefined) {
+            session.practiceState.activeTimeSpent = 0;
+            sessionUpdated = true;
+          }
+        }
+        
+        if (sessionUpdated) {
+          migrationCount++;
+        }
+      });
+      
+      if (migrationCount > 0) {
+        db.write();
+        console.log(`✅ Migrated ${migrationCount} sessions to include active time tracking`);
+      } else {
+        console.log('✅ No sessions needed migration');
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error migrating session data:', error);
+  }
+};
 
 export default db;

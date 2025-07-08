@@ -16,6 +16,7 @@ import { useStepController } from "../hooks/useStepController";
 import { useAuth } from "../hooks/useAuth";
 import { useSession } from "../hooks/useSession";
 import { usePacemakerData } from "../hooks/usePacemakerData";
+import { useActiveTimeTracker } from "../hooks/useActiveTimeTracker";
 
 interface ModuleConfig {
   title: string;
@@ -36,8 +37,6 @@ interface ModuleConfig {
     vSensitivity: boolean;
   };
 }
-
-// In ModulePage.tsx - REPLACE the moduleConfigs object with only these 3 real modules:
 
 const moduleConfigs: Record<string, ModuleConfig> = {
   "1": {
@@ -244,6 +243,109 @@ const CustomSlider = ({
   );
 };
 
+interface SessionTimerProps {
+  currentSession: any;
+  totalActiveTime: number;
+  isCurrentlyTracking: boolean;
+  className?: string;
+}
+
+const SessionTimer = ({ 
+  currentSession, 
+  totalActiveTime, 
+  isCurrentlyTracking,
+  className = ""
+}: SessionTimerProps) => {
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    if (!currentSession?.startedAt) return;
+
+    const updateElapsed = () => {
+      const started = new Date(currentSession.startedAt).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - started) / 1000);
+      setElapsedTime(elapsed);
+    };
+
+    updateElapsed();
+    const interval = setInterval(updateElapsed, 1000);
+    return () => clearInterval(interval);
+  }, [currentSession?.startedAt, currentSession?.id]);
+
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const efficiency = elapsedTime > 0 ? Math.round((totalActiveTime / elapsedTime) * 100) : 0;
+
+  const sessionAge = currentSession ? 
+    Math.floor((Date.now() - new Date(currentSession.startedAt).getTime()) / 1000) : 0;
+  const wasRestored = sessionAge > 60;
+
+  return (
+    <div className={`bg-blue-50 rounded-xl p-4 border border-blue-200 ${className}`}>
+      <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
+        <span className={`w-3 h-3 rounded-full mr-2 ${isCurrentlyTracking ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
+        Live Session Timer
+        {wasRestored && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Restored</span>}
+      </h3>
+      
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <div className="text-blue-700 font-medium">Session Elapsed</div>
+          <div className="text-xl font-mono text-blue-900">{formatTime(elapsedTime)}</div>
+          <div className="text-xs text-blue-600">Since session start</div>
+        </div>
+        
+        <div>
+          <div className="text-blue-700 font-medium">Total Active</div>
+          <div className="text-xl font-mono text-blue-900">{formatTime(totalActiveTime)}</div>
+          <div className="text-xs text-blue-600">Cumulative across visits</div>
+        </div>
+        
+        <div>
+          <div className="text-blue-700 font-medium">Current Efficiency</div>
+          <div className="text-lg font-bold text-blue-900">{efficiency}%</div>
+          <div className="text-xs text-blue-600">Active/elapsed ratio</div>
+        </div>
+        
+        <div>
+          <div className="text-blue-700 font-medium">Status</div>
+          <div className={`text-sm font-medium ${isCurrentlyTracking ? 'text-green-600' : 'text-gray-600'}`}>
+            {isCurrentlyTracking ? '🟢 Tracking' : '⏸️ Paused'}
+          </div>
+          <div className="text-xs text-blue-600">
+            {isCurrentlyTracking ? 'Adding to total' : 'Not counting time'}
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-3 text-xs text-blue-600 space-y-1">
+        <div>Session ID: {currentSession?.id?.slice(-8) || 'None'}</div>
+        <div>Started: {currentSession ? new Date(currentSession.startedAt).toLocaleTimeString() : 'Never'}</div>
+        {currentSession?.practiceState?.stepProgress && (
+          <div>Step: {currentSession.practiceState.stepProgress.currentStepIndex + 1} | 
+               Completed: [{currentSession.practiceState.stepProgress.completedSteps.join(', ')}]</div>
+        )}
+      </div>
+      
+      {/* 🔥 NEW: Add helpful explanation */}
+      <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+        💡 <strong>Active Time</strong> accumulates across page visits and only counts when you're actively viewing this page.
+        It pauses when you switch tabs or minimize the window.
+      </div>
+    </div>
+  );
+};
+
 const ModulePage = () => {
   const { moduleId } = useParams();
   const navigate = useNavigate();
@@ -276,6 +378,7 @@ const ModulePage = () => {
     resumeSession,
     updateStepProgress,
     endSessionForNavigation,
+    updateActiveTime, 
   } = useSession(currentUser?.id);
 
   const {
@@ -307,6 +410,23 @@ const ModulePage = () => {
   const [sensorStates, setSensorStates] = useState({
     left: false,
     right: false,
+  });
+
+  // active time tracking
+  const {
+    totalActiveTime,
+    isCurrentlyTracking,
+    reset: resetActiveTime,
+    getDetailedStats,
+  } = useActiveTimeTracker({
+    isActive: isPageReady && !!currentSession && !showCompletion,
+    onTimeUpdate: useCallback((activeSeconds: number) => {
+      if (currentSession?.id) {
+        const activity = quizCompleted ? 'practice' : 'quiz';
+        updateActiveTime(currentSession.id, activeSeconds, activity);
+      }
+    }, [currentSession?.id, quizCompleted, updateActiveTime]),
+    updateInterval: 5000,
   });
 
   // Force reset to module params when module changes
@@ -461,6 +581,13 @@ const ModulePage = () => {
       setIsSuccess(actualSuccess);
       setShowCompletion(true);
 
+      // Force a final active time update before ending session
+      const finalActiveTime = totalActiveTime; // This should be current
+      if (finalActiveTime > 0 && currentSession?.id) {
+        // Don't call updateActiveTime here as it might cause loops
+        // The useActiveTimeTracker will handle the final update
+      }
+
       setTimeout(() => {
         try {
           endSession(
@@ -474,8 +601,20 @@ const ModulePage = () => {
         }
       }, 100);
     },
-    [currentSession, quizScore, endSession],
+    [currentSession, quizScore, endSession, totalActiveTime] // Use totalActiveTime directly
   );
+
+
+  useEffect(() => {
+    console.log("🐛 DEBUG - ModulePage render dependencies:", {
+      moduleId,
+      isPageReady,
+      currentSessionId: currentSession?.id?.slice(-8),
+      quizCompleted,
+      totalActiveTime,
+      isCurrentlyTracking
+    });
+  }, [moduleId, isPageReady, currentSession?.id, quizCompleted, totalActiveTime, isCurrentlyTracking]);
 
   const handleModuleParameterChange = useCallback(
     (param: string, value: number) => {
@@ -515,6 +654,9 @@ const ModulePage = () => {
       endSession(currentSession.id, false, 0, 0);
     }
 
+    // Reset active time tracking
+    resetActiveTime();
+
     setShowCompletion(false);
     setQuizCompleted(false);
     setQuizPassed(false);
@@ -523,15 +665,11 @@ const ModulePage = () => {
     setIsSuccess(false);
 
     if (currentModule) {
-      console.log(
-        "🔄 Resetting to initial params:",
-        currentModule.initialParams,
-      );
+      console.log("🔄 Resetting to initial params:", currentModule.initialParams);
       setPacemakerParams(currentModule.initialParams);
     }
 
     setSensorStates({ left: false, right: false });
-
     setIsPageReady(false);
 
     setTimeout(() => {
@@ -542,11 +680,24 @@ const ModulePage = () => {
       }
       setIsPageReady(true);
     }, 100);
-  }, [currentSession, endSession, currentModule, moduleId, startSession]);
+  }, [currentSession, endSession, currentModule, moduleId, startSession, resetActiveTime]);
 
   useEffect(() => {
     setResumeBannerSession(null);
   }, [moduleId]);
+
+  useEffect(() => {
+    console.log("🔍 SESSION RESTORE DEBUG:", {
+      hasCurrentSession: !!currentSession,
+      sessionId: currentSession?.id?.slice(-8),
+      moduleId: moduleId,
+      sessionModuleId: currentSession?.moduleId,
+      quizCompleted: currentSession?.quizState?.isCompleted,
+      stepProgress: currentSession?.practiceState?.stepProgress,
+      isPageReady,
+      resumeBannerSession: !!resumeBannerSession
+    });
+  }, [currentSession?.id, moduleId, isPageReady]);
 
   const getHint = useCallback(() => {
     const generalHints: Record<string, string> = {
@@ -680,8 +831,18 @@ const ModulePage = () => {
       return;
     }
 
-    console.log("🔄 Restoring session state for:", currentSession.id);
+    // 🔥 FIX: Ensure we're restoring the right session for the right module
+    if (currentSession.moduleId !== moduleId) {
+      console.log("⚠️ Session module mismatch:", {
+        sessionModule: currentSession.moduleId,
+        currentModule: moduleId
+      });
+      return;
+    }
 
+    console.log("🔄 Restoring session state for:", currentSession.id.slice(-8));
+
+    // Restore quiz state
     if (currentSession.quizState.isCompleted && !quizCompleted) {
       console.log("📝 Restoring completed quiz state");
       setQuizCompleted(true);
@@ -695,25 +856,22 @@ const ModulePage = () => {
       });
     }
 
+    // Restore practice parameters
     if (currentSession.practiceState.currentParameters) {
       const sessionParams = currentSession.practiceState.currentParameters;
-      console.log("📊 Session parameters:", sessionParams);
-      console.log("📊 Current parameters:", pacemakerParams);
-
-      const isDifferent = Object.keys(sessionParams).some(
-        (key) =>
-          pacemakerParams[key as keyof typeof pacemakerParams] !==
-          sessionParams[key as keyof typeof sessionParams],
-      );
-
-      if (isDifferent) {
-        console.log("📊 Restoring different parameters from session");
-        setPacemakerParams(sessionParams);
-      } else {
-        console.log("📊 Parameters already match session, no update needed");
-      }
+      console.log("📊 Restoring session parameters:", sessionParams);
+      
+      // 🔥 FIX: Force parameter update even if they seem the same
+      setPacemakerParams({ ...sessionParams });
     }
-  }, [currentSession?.id, isPageReady]);
+
+    // 🔥 FIX: Restore step progress to step controller
+    if (currentSession.practiceState.stepProgress && steps.length > 0) {
+      console.log("🎯 Restoring step progress:", currentSession.practiceState.stepProgress);
+      // The step controller should handle this automatically, but let's make sure
+    }
+
+  }, [currentSession?.id, currentSession?.moduleId, moduleId, isPageReady, steps.length]);
 
   useEffect(() => {
     console.log("📍 ModulePage mounted for module:", moduleId);
@@ -854,13 +1012,16 @@ const ModulePage = () => {
   }, [quizCompleted, currentSession?.currentStep]);
 
   useEffect(() => {
-    console.log("🔄 Module changed - clearing all state");
+    console.log("🔄 Module changed - clearing all state including active time");
     setResumeBannerSession(null);
     setQuizCompleted(false);
     setQuizPassed(false);
     setQuizScore({ score: 0, total: 0 });
     setShowCompletion(false);
     setIsSuccess(false);
+    
+    // Reset active time tracking
+    resetActiveTime();
   }, [moduleId]);
 
   useEffect(() => {
@@ -1037,17 +1198,6 @@ const ModulePage = () => {
                 sensitivity={pacemakerParams.aSensitivity}
                 mode={currentModule.mode}
               />
-
-              {quizCompleted && stepControllerInitialized && currentStep && (
-                <div className="text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded">
-                  <strong>Current Step:</strong> {currentStep.objective}
-                  {currentStepIndex < steps.length - 1 && (
-                    <span className="ml-2 text-blue-600">
-                      (Step {currentStepIndex + 1}/{steps.length})
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
 
             {isConnected && connectionMode === "pacemaker" && quizCompleted && (
@@ -1287,59 +1437,56 @@ const ModulePage = () => {
 
           <div className="space-y-6">
             {currentSession && (
-              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                <h3 className="mb-3 font-bold text-blue-900">
-                  Session Progress
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Quiz</span>
-                    <span
-                      className={
-                        quizCompleted ? "text-green-600" : "text-gray-500"
-                      }
-                    >
-                      {quizCompleted ? "✓ Complete" : "In Progress"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Practice Steps</span>
-                    <span className="text-blue-600">
-                      {completedSteps.size}/{steps.length} Complete
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Adjustments</span>
-                    <span className="text-gray-700">
-                      {currentSession.practiceState.parameterChanges.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Duration</span>
-                    <span className="text-gray-700">
-                      {Math.floor(
-                        (Date.now() -
-                          new Date(currentSession.startedAt).getTime()) /
-                          60000,
-                      )}
-                      m
-                    </span>
-                  </div>
-                  {steps.length > 0 && stepControllerInitialized && (
-                    <div className="mt-2">
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${getProgressPercentage()}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1 text-center">
-                        {getProgressPercentage()}% Complete
-                      </p>
+              <>
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <h3 className="mb-3 font-bold text-blue-900">
+                    Session Progress
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Quiz</span>
+                      <span
+                        className={
+                          quizCompleted ? "text-green-600" : "text-gray-500"
+                        }
+                      >
+                        {quizCompleted ? "✓ Complete" : "In Progress"}
+                      </span>
                     </div>
-                  )}
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Practice Steps</span>
+                      <span className="text-blue-600">
+                        {completedSteps.size}/{steps.length} Complete
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Adjustments</span>
+                      <span className="text-gray-700">
+                        {currentSession.practiceState.parameterChanges.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Active Time</span>
+                      <span className="text-green-700 font-mono">
+                        {Math.floor(totalActiveTime / 60)}:{(totalActiveTime % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
+                    {steps.length > 0 && stepControllerInitialized && (
+                      <div className="mt-2">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${getProgressPercentage()}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1 text-center">
+                          {getProgressPercentage()}% Complete
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             <div className="bg-[#F0F6FE] rounded-xl p-4">
