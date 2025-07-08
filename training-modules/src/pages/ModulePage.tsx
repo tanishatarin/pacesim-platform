@@ -2461,7 +2461,7 @@ const ModulePage = () => {
               />
             </div>
 
-            {isConnected && connectionMode === "pacemaker" && quizCompleted && (
+            {/* {isConnected && connectionMode === "pacemaker" && quizCompleted && (
               <div className="bg-green-50 rounded-xl p-6 border-2 border-green-200">
                 <h3 className="font-bold text-lg mb-3 flex items-center">
                   <span className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></span>
@@ -2489,13 +2489,13 @@ const ModulePage = () => {
                   <div className="bg-white rounded-lg p-2">
                     <div className="text-gray-500">A Sensitivity</div>
                     <div className="font-mono text-lg">
-                      {pacemakerParams.aSensitivity} mV
+                      {displayAOutput} mV
                     </div>
                   </div>
                   <div className="bg-white rounded-lg p-2">
                     <div className="text-gray-500">V Sensitivity</div>
                     <div className="font-mono text-lg">
-                      {pacemakerParams.vSensitivity} mV
+                      {dis} mV
                     </div>
                   </div>
                   {pacemakerState?.batteryLevel && (
@@ -2511,7 +2511,7 @@ const ModulePage = () => {
                   ✅ Real-time data from hardware pacemaker device
                 </p>
               </div>
-            )}
+            )} */}
 
             {(!isConnected || connectionMode !== "pacemaker") && quizCompleted && (
               <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200">

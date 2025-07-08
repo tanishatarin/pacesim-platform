@@ -352,137 +352,138 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
     },
     steps: [
       // Initial wire testing (before A fib develops)
-      {
-        id: "afib_step1",
-        objective: "FAKE LOL but set rate to 80",
-        instruction:
-          "Set rate to 64, A sensitivity to 0.4mV, then slowly increase until sensing threshold found",
-        targetValues: { rate: 80 },
-        allowedControls: ["rate"],
-        completionCriteria: sensingThresholdCriteria,
-        hint: "A wire sensing threshold is 0.4mV in this scenario",
-      },
-      {
-        id: "afib_step2",
-        objective: "FAKE LOL but set rate to 180",
-        instruction:
-          "Set aSensitivity to half the threshold (0.2mV) for safety margin",
-        targetValues: { rate: 180},
-        allowedControls: ["rate"],
-        completionCriteria: defaultCompletionCriteria,
-        hint: "Half threshold for safety",
-      },
       // {
       //   id: "afib_step1",
-      //   objective: "Check A wire sensitivity to 4mV threshold",
+      //   objective: "FAKE LOL but set rate to 80",
       //   instruction:
-      //     "Set rate to 64, A sensitivity to 0.4mV, then slowly increase to 4mV until sensing threshold found",
-      //   targetValues: { aSensitivity: 4, rate: 64 },
-      //   allowedControls: ["aSensitivity", "rate"],
+      //     "Set rate to 64, A sensitivity to 0.4mV, then slowly increase until sensing threshold found",
+      //   targetValues: { rate: 80 },
+      //   allowedControls: ["rate"],
       //   completionCriteria: sensingThresholdCriteria,
-      //   hint: "A wire sensing threshold is 4mV in this scenario",
+      //   hint: "A wire sensing threshold is 0.4mV in this scenario",
       // },
       // {
       //   id: "afib_step2",
-      //   objective: "Set A sensitivity safety margin to 2mV",
+      //   objective: "FAKE LOL but set rate to 180",
       //   instruction:
-      //     "Set aSensitivity to half the threshold (2mV) for safety margin",
-      //   targetValues: { aSensitivity: 2 },
-      //   allowedControls: ["aSensitivity"],
+      //     "Set aSensitivity to half the threshold (0.2mV) for safety margin",
+      //   targetValues: { rate: 180},
+      //   allowedControls: ["rate"],
       //   completionCriteria: defaultCompletionCriteria,
       //   hint: "Half threshold for safety",
       // },
-      // {
-      //   id: "afib_step3",
-      //   objective: "Find A capture threshold at 10mA",
-      //   instruction:
-      //     "Set rate to 84, slowly increase aOutput until close to capture at 10mA (HR shows 80)",
-      //   targetValues: { aOutput: 10, rate: 84 },
-      //   allowedControls: ["aOutput", "rate"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Close to A capture at 10mA",
-      // },
-      // {
-      //   id: "afib_step4",
-      //   objective: "Achieve A full capture at 12mA",
-      //   instruction:
-      //     "Continue increasing aOutput until full 1:1 A capture (HR=84) at 12mA",
-      //   targetValues: { aOutput: 12 },
-      //   allowedControls: ["aOutput"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Full atrial capture at 12mA",
-      // },
-      // {
-      //   id: "afib_step5",
-      //   objective: "Set A output safety margin to 24mA",
-      //   instruction:
-      //     "Set aOutput to double the threshold (24mA) for safety margin",
-      //   targetValues: { aOutput: 24 },
-      //   allowedControls: ["aOutput"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Double threshold for safety",
-      // },
-      // // V wire testing
-      // {
-      //   id: "afib_step6",
-      //   objective: "Find V sensing threshold at 5mV",
-      //   instruction:
-      //     "Test V wires: slowly increase vSensitivity from 0.8mV to 5mV threshold",
-      //   targetValues: { vSensitivity: 5 },
-      //   allowedControls: ["vSensitivity"],
-      //   completionCriteria: vSensingThresholdCriteria,
-      //   hint: "V sensing threshold is 5mV in this scenario",
-      // },
-      // {
-      //   id: "afib_step7",
-      //   objective: "Set V sensitivity safety margin to 2.5mV",
-      //   instruction:
-      //     "Set vSensitivity to half the threshold (2.5mV) for safety",
-      //   targetValues: { vSensitivity: 2.5 },
-      //   allowedControls: ["vSensitivity"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Half threshold for safety margin",
-      // },
-      // {
-      //   id: "afib_step8",
-      //   objective: "Find V capture threshold at 8mA",
-      //   instruction:
-      //     "Test V capture: slowly increase vOutput until close to capture at 8mA (HR shows 80)",
-      //   targetValues: { vOutput: 8 },
-      //   allowedControls: ["vOutput"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Close to V capture at 8mA",
-      // },
-      // {
-      //   id: "afib_step9",
-      //   objective: "Achieve V full capture at 10mA",
-      //   instruction:
-      //     "Continue increasing vOutput until full 1:1 V capture (HR=84) at 10mA",
-      //   targetValues: { vOutput: 10 },
-      //   allowedControls: ["vOutput"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Full ventricular capture at 10mA",
-      // },
-      // {
-      //   id: "afib_step10",
-      //   objective: "Set V output safety margin to 20mA",
-      //   instruction: "Set vOutput to double the threshold (20mA) for safety",
-      //   targetValues: { vOutput: 20 },
-      //   allowedControls: ["vOutput"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Double threshold for safety",
-      // },
-      // // Patient develops A fib and needs VVI pacing
-      // {
-      //   id: "afib_step11",
-      //   objective: "Patient develops A fib - turn on VVI at 80 BPM",
-      //   instruction:
-      //     "Patient now in A fib with bradycardia after medications. Set VVI pacing at 80 BPM",
-      //   targetValues: { rate: 80 },
-      //   allowedControls: ["rate"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "VVI pacing needed due to medication-induced bradycardia in A fib",
-      // },
+      {
+        id: "afib_step1",
+        objective: "Check A wire sensitivity to 4mV threshold",
+        instruction:
+          "Set rate to 64, A sensitivity to 0.4mV, then slowly increase to 4mV until sensing threshold found",
+        targetValues: { aSensitivity: 4, rate: 64 },
+        allowedControls: ["aSensitivity", "rate"],
+        completionCriteria: sensingThresholdCriteria,
+        hint: "A wire sensing threshold is 4mV in this scenario",
+      },
+      {
+        id: "afib_step2",
+        objective: "Set A sensitivity safety margin to 2mV",
+        instruction:
+          "Set aSensitivity to half the threshold (2mV) for safety margin",
+        targetValues: { aSensitivity: 2 },
+        allowedControls: ["aSensitivity"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Half threshold for safety",
+      },
+      {
+        id: "afib_step3",
+        objective: "Find A capture threshold at 10mA",
+        instruction:
+          "Set rate to 84, slowly increase aOutput until close to capture at 10mA (HR shows 80)",
+        targetValues: { aOutput: 10, rate: 84 },
+        allowedControls: ["aOutput", "rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Close to A capture at 10mA",
+      },
+      {
+        id: "afib_step4",
+        objective: "Achieve A full capture at 12mA",
+        instruction:
+          "Continue increasing aOutput until full 1:1 A capture (HR=84) at 12mA",
+        targetValues: { aOutput: 12 },
+        allowedControls: ["aOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Full atrial capture at 12mA",
+      },
+      {
+        id: "afib_step5",
+        objective: "Set A output safety margin to 24mA",
+        instruction:
+          "Set aOutput to double the threshold (20mA) for safety margin",
+        targetValues: { aOutput: 20 },
+        allowedControls: ["aOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Double threshold for safety",
+      },
+      // V wire testing
+      {
+        id: "afib_step6",
+        objective: "Find V sensing threshold at 5mV",
+        instruction:
+          "Test V wires: slowly increase vSensitivity from 0.8mV to 5mV threshold",
+        targetValues: { vSensitivity: 5 },
+        allowedControls: ["vSensitivity"],
+        // completionCriteria: vSensingThresholdCriteria,
+        completionCriteria: defaultCompletionCriteria,
+        hint: "V sensing threshold is 5mV in this scenario",
+      },
+      {
+        id: "afib_step7",
+        objective: "Set V sensitivity safety margin to 2.5mV",
+        instruction:
+          "Set vSensitivity to half the threshold (2.5mV) for safety",
+        targetValues: { vSensitivity: 2.5 },
+        allowedControls: ["vSensitivity"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Half threshold for safety margin",
+      },
+      {
+        id: "afib_step8",
+        objective: "Find V capture threshold at 8mA",
+        instruction:
+          "Test V capture: slowly increase vOutput until close to capture at 8mA (HR shows 80)",
+        targetValues: { vOutput: 8 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Close to V capture at 8mA",
+      },
+      {
+        id: "afib_step9",
+        objective: "Achieve V full capture at 10mA",
+        instruction:
+          "Continue increasing vOutput until full 1:1 V capture (HR=84) at 10mA",
+        targetValues: { vOutput: 10 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Full ventricular capture at 10mA",
+      },
+      {
+        id: "afib_step10",
+        objective: "Set V output safety margin to 20mA",
+        instruction: "Set vOutput to double the threshold (20mA) for safety",
+        targetValues: { vOutput: 20 },
+        allowedControls: ["vOutput"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "Double threshold for safety",
+      },
+      // Patient develops A fib and needs VVI pacing
+      {
+        id: "afib_step11",
+        objective: "Patient develops A fib - turn on VVI at 80 BPM",
+        instruction:
+          "Patient now in A fib with bradycardia after medications. Set VVI pacing at 80 BPM",
+        targetValues: { rate: 80 },
+        allowedControls: ["rate"],
+        completionCriteria: defaultCompletionCriteria,
+        hint: "VVI pacing needed due to medication-induced bradycardia in A fib",
+      },
     ],
   },
 };
