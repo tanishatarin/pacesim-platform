@@ -1037,27 +1037,19 @@ const ModulePage = () => {
                 sensitivity={pacemakerParams.aSensitivity}
                 mode={currentModule.mode}
               />
-
-              {quizCompleted && stepControllerInitialized && currentStep && (
-                <div className="text-xs text-gray-600 bg-gray-50 px-3 py-2 rounded">
-                  <strong>Current Step:</strong> {currentStep.objective}
-                  {currentStepIndex < steps.length - 1 && (
-                    <span className="ml-2 text-blue-600">
-                      (Step {currentStepIndex + 1}/{steps.length})
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+              </div>
 
             {isConnected && connectionMode === "pacemaker" && quizCompleted && (
               <div className="bg-green-50 rounded-xl p-6 border-2 border-green-200">
                 <h3 className="font-bold text-lg mb-3 flex items-center">
                   <span className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></span>
                   Hardware Connected - Live Data
-                  <span className="ml-3 text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    Quiz Complete: {quizScore.score}/{quizScore.total}
-                  </span>
+                  {steps.length > 0 && stepControllerInitialized && (
+                        <span className="ml-3 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                        Step {currentStepIndex + 1}/{steps.length} •{" "}
+                        {getProgressPercentage()}% Complete
+                        </span>
+                    )}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                   <div className="bg-white rounded-lg p-2">
@@ -1209,10 +1201,10 @@ const ModulePage = () => {
                       </span>
                     )}
                     {steps.length > 0 && stepControllerInitialized && (
-                      <span className="ml-3 text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                        <span className="ml-3 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                         Step {currentStepIndex + 1}/{steps.length} •{" "}
                         {getProgressPercentage()}% Complete
-                      </span>
+                        </span>
                     )}
                   </h3>
 
