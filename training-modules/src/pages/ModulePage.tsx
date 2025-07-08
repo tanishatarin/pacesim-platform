@@ -1485,7 +1485,6 @@
 
 
 
-
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -2065,18 +2064,30 @@ const ModulePage = () => {
     }
   }, [isConnected, connectionMode]);
 
-  // Step controller - pass correct params
+  // Step controller - pass correct params (hardware values for step checking when connected)
   const stepControllerProps = useMemo(() => {
+    // For step completion checking, use hardware values if connected, otherwise use UI params
+    const paramsForStepCheck = isConnected && pacemakerState ? {
+      rate: pacemakerState.rate || pacemakerParams.rate,
+      aOutput: pacemakerState.a_output || pacemakerParams.aOutput,
+      vOutput: pacemakerState.v_output || pacemakerParams.vOutput,
+      aSensitivity: pacemakerState.aSensitivity || pacemakerParams.aSensitivity,
+      vSensitivity: pacemakerState.vSensitivity || pacemakerParams.vSensitivity,
+    } : pacemakerParams;
+
     console.log("🔧 Step controller props update:", {
       moduleId,
       sessionId: currentSession?.id?.slice(-8) || "none",
       isQuizCompleted: quizCompleted,
-      params: pacemakerParams,
+      isConnected,
+      uiParams: pacemakerParams,
+      hardwareParams: pacemakerState,
+      paramsForStepCheck,
     });
 
     return {
       moduleId: moduleId,
-      currentParams: pacemakerParams,
+      currentParams: paramsForStepCheck, // Use the correct params for step checking
       isQuizCompleted: quizCompleted,
       currentSession,
       updateStepProgress: handleStepProgressUpdate,
@@ -2084,6 +2095,8 @@ const ModulePage = () => {
   }, [
     moduleId,
     pacemakerParams,
+    pacemakerState, // Add hardware state dependency
+    isConnected,    // Add connection status dependency
     quizCompleted,
     currentSession?.id,
     handleStepProgressUpdate,
