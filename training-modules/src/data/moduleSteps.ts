@@ -414,7 +414,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
       },
       {
         id: "afib_step5",
-        objective: "Set A output safety margin to 24mA",
+        objective: "Set A output safety margin to 20mA",
         instruction:
           "Set aOutput to double the threshold (20mA) for safety margin",
         targetValues: { aOutput: 20 },
@@ -430,8 +430,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
           "Test V wires: slowly increase vSensitivity from 0.8mV to 5mV threshold",
         targetValues: { vSensitivity: 5 },
         allowedControls: ["vSensitivity"],
-        // completionCriteria: vSensingThresholdCriteria,
-        completionCriteria: defaultCompletionCriteria,
+        completionCriteria: vSensingThresholdCriteria,
         hint: "V sensing threshold is 5mV in this scenario",
       },
       {
