@@ -98,7 +98,7 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
   "1": {
     title: "Scenario 1",
     objective:
-      "Diagnose and correct a failure to sense condition. Complete the knowledge check and then adjust the pacemaker.\n\n" +
+      "Diagnose and correct this condition. Complete the knowledge check and then adjust the pacemaker.\n\n" +
        "Scenario: You return to a patient's room and observe this ECG pattern. Their heart rate has dropped to 40 BPM and atrial leads are connected.",
     mode: "sensitivity",
     initialParams: {
@@ -120,8 +120,8 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
   "2": {
     title: "Scenario 2",
     objective:
-      "Diagnose and manage third degree heart block with appropriate VVI pacing settings.\n\n" +
-      "Scenario: POD 3 MVR patient feeling 'funny'. HR is 30, BP is 85/50 MAP (62). You have 1V and 1A wire.",
+      "Diagnose and correct this condition. Complete the knowledge check and then adjust the pacemaker.\n\n" +
+      "Scenario: POD 3 MVR patient feeling 'funny'. HR is 30, BP is 85/50 MAP (62). You have 2V and 2A wire.",
     mode: "third_degree_block",
     initialParams: {
       rate: 30,
@@ -142,9 +142,8 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
   "3": {
     title: "Scenario 3",
     objective:
-      "Manage atrial fibrillation patient who developed bradycardia after rate control medications.\n\n"
-      + "Scenario: POD 3 AVR patient developed A fib with rapid rate. After amiodarone and metoprolol, HR dropped to" +
-       " 38. Patient still in A fib. You have 1V wire and 1 skin wire",
+      "Diagnose and correct this condition. Complete the knowledge check and then adjust the pacemaker.\n\n"
+      + "Scenario: POD 3 AVR patient has a HR of 74 and BP is 110/74 (86). Patient has a history of hypertension and a bicuspid aortic valve. Later, after amiodarone and metoprolol, HR dropped to 38. Patient still in [redacted condition]. You have 1V wire and 1 skin wire",
     mode: "atrial_fibrillation",
     initialParams: {
       rate: 30,
