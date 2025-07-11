@@ -61,14 +61,6 @@ const defaultCompletionCriteria = (
   return true;
 };
 
-// Auto-complete function for observation steps
-const autoCompleteCriteria = (
-  currentParams: any,
-  targetValues: any,
-): boolean => {
-  // Always return true for observation steps - they auto-complete after a delay
-  return true;
-};
 
 export const moduleConfigs: Record<string, ModuleConfig> = {
   "1": {
@@ -368,7 +360,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         id: "td_step9",
         objective: "Set Heart Rate to 74 BPM",
         instruction:
-          "Set rate to 4 to start testing ventricular pacing - 10 below patient's intrinsic rate",
+          "Set rate to 74 to start testing ventricular pacing - 10 below patient's intrinsic rate",
         targetValues: { rate: 74 },
         allowedControls: ["rate"],
         completionCriteria: defaultCompletionCriteria,

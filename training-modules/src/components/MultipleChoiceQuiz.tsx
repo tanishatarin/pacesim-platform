@@ -77,12 +77,13 @@ const quizData: Record<number, QuizQuestion[]> = {
     {
       id: "third_degree_q2",
       question:
-        "What is the most appropriate initial pacing mode for this patient with only ventricular leads?",
+        "What is the most appropriate initial pacing mode for this patient?",
       options: ["AAI", "VVI", "DDD", "DOO"],
-      correctAnswer: 1,
+      correctAnswer: 3,
       explanation:
-        "VVI mode is appropriate when only ventricular leads are available. It provides ventricular pacing with inhibition based on sensed ventricular activity.",
-    },
+        // "VVI mode is appropriate when only ventricular leads are available. It provides ventricular pacing with inhibition based on sensed ventricular activity.",
+        "DDD mode is appropriate for third degree block as it allows asynchronous pacing of both chambers, since you have both A and V leads.",
+      },
     {
       id: "third_degree_q3",
       question: "What is the primary hemodynamic concern with this rhythm?",

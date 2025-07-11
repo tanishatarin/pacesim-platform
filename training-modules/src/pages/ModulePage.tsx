@@ -93,7 +93,6 @@ interface SimpleModuleConfig {
   };
 }
 
-// 🔥 SIMPLIFIED - Just the UI-specific configs (no patient vitals here - those come from moduleSteps)
 const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
   "1": {
     title: "Scenario 1",
@@ -490,6 +489,79 @@ const ModulePage = () => {
     isInitialized: stepControllerInitialized,
   } = useStepController(stepControllerProps);
 
+  // for the flashing sensors - new logic ! 
+  const getSensorStatesForModule = useCallback(() => {
+    // Define sensing thresholds per module
+    const moduleThresholds = {
+      "1": {
+        aThreshold: 1.6,  // From step4
+        vThreshold: null, // No V wire testing in module 1
+        testingPhase: "atrial" // Only testing A wire
+      },
+      "2": {
+        aThreshold: 4.0,  // From step3  
+        vThreshold: 5.0,  // From step11
+        testingPhase: currentStepIndex <= 8 ? "atrial" : "ventricular" // Switch at step9
+      },
+      "3": {
+        aThreshold: null, // No A wire testing in module 3
+        vThreshold: 2.0,  // From step4
+        testingPhase: "ventricular" // Only testing V wire
+      }
+    };
+
+    const config = moduleThresholds[moduleId as keyof typeof moduleThresholds];
+    if (!config) {
+      return { left: false, right: false };
+    }
+
+    let leftSensor = false;  // Pace light
+    let rightSensor = false; // Sense light
+
+    if (config.testingPhase === "atrial" && config.aThreshold) {
+      // Atrial testing phase
+      if (pacemakerParams.aSensitivity < config.aThreshold) {
+        // Below threshold = Sense light flashing (looking for intrinsic activity)
+        rightSensor = true;
+      } else {
+        // At or above threshold = Pace light flashing (threshold found, now pacing)
+        leftSensor = true;
+      }
+    } else if (config.testingPhase === "ventricular" && config.vThreshold) {
+      // Ventricular testing phase  
+      if (pacemakerParams.vSensitivity < config.vThreshold) {
+        // Below threshold = Sense light flashing
+        rightSensor = true;
+      } else {
+        // At or above threshold = Pace light flashing
+        leftSensor = true;
+      }
+    }
+
+    // Override for safety margin steps - once we set safety margin, pace light should be on
+    const safetyMarginSteps = ["step5", "step12"]; // A safety (mod1&2), V safety (mod2)
+    if (safetyMarginSteps.some(step => completedSteps.has(step))) {
+      leftSensor = true;
+      rightSensor = false;
+    }
+
+    console.log("🚨 Sensor states calculated:", {
+      moduleId,
+      currentStepIndex,
+      testingPhase: config.testingPhase,
+      aSensitivity: pacemakerParams.aSensitivity,
+      vSensitivity: pacemakerParams.vSensitivity,
+      aThreshold: config.aThreshold,
+      vThreshold: config.vThreshold,
+      leftSensor,
+      rightSensor,
+      completedSafetySteps: safetyMarginSteps.filter(step => completedSteps.has(step))
+    });
+
+    return { left: leftSensor, right: rightSensor };
+  }, [moduleId, currentStepIndex, pacemakerParams.aSensitivity, pacemakerParams.vSensitivity, completedSteps]);
+
+
   // 🔥 NEW - Get dynamic patient vitals
   const currentPatientVitals = useMemo(() => {
     return getCurrentPatientVitals(
@@ -777,70 +849,108 @@ const ModulePage = () => {
   useEffect(() => {
     if (!currentModule) return;
 
-    const leftShouldFlash =
-      displayAOutput > 0 && pacemakerParams.aSensitivity > 0;
-    const rightShouldFlash =
-      displayVOutput > 0 && pacemakerParams.vSensitivity > 0;
-
-    const stepFlashingSensor = getFlashingSensor();
-
-    const shouldStopFlashingLeft = () => {
-      if (completedSteps.has("step4") || completedSteps.has("step5")) {
-        return true;
+    const newSensorStates = getSensorStatesForModule();
+    
+    setSensorStates(prevStates => {
+      // Only update if states actually changed to prevent unnecessary re-renders
+      if (prevStates.left === newSensorStates.left && prevStates.right === newSensorStates.right) {
+        return prevStates;
       }
-
-      if (moduleId === "1") {
-        if (currentStepIndex >= 6) {
-          return pacemakerParams.aSensitivity >= 0.8;
-        }
-        if (currentStepIndex >= 3 && currentStepIndex <= 5) {
-          return false;
-        }
-      }
-
-      return false;
-    };
-
-    const shouldStopFlashingRight = () => {
-      if (completedSteps.has("step4") || completedSteps.has("step5")) {
-        return true;
-      }
-
-      if (moduleId === "1") {
-        return currentStepIndex >= 6;
-      }
-
-      return false;
-    };
-
-    setSensorStates((prev) => {
-      const newState = {
-        left:
-          (leftShouldFlash || stepFlashingSensor === "left") &&
-          !shouldStopFlashingLeft(),
-        right:
-          (rightShouldFlash || stepFlashingSensor === "right") &&
-          !shouldStopFlashingRight(),
-      };
-
-      if (prev.left === newState.left && prev.right === newState.right) {
-        return prev;
-      }
-
-      return newState;
+      
+      console.log("🚨 Sensor states changing:", {
+        from: prevStates,
+        to: newSensorStates,
+        reason: `Step ${currentStepIndex + 1}, A=${pacemakerParams.aSensitivity}mV, V=${pacemakerParams.vSensitivity}mV`
+      });
+      
+      return newSensorStates;
     });
-  }, [
-    currentModule,
-    displayAOutput,
-    displayVOutput,
-    pacemakerParams.aSensitivity,
-    pacemakerParams.vSensitivity,
-    getFlashingSensor,
-    currentStep,
-    currentStepIndex,
-    completedSteps,
-    moduleId,
-  ]);
+  }, [getSensorStatesForModule]);
+
+  const renderSensorLights = () => {
+    if (moduleId === "2") {
+      // Module 2: Show both A & V sensor pairs
+      const aThreshold = 4.0;
+      const vThreshold = 5.0;
+      
+      const aSensorActive = pacemakerParams.aSensitivity >= aThreshold;
+      const vSensorActive = pacemakerParams.vSensitivity >= vThreshold;
+      
+      return (
+        <div className="bg-[#F0F6FE] rounded-xl p-4">
+          <h3 className="mb-4 font-bold">Sensing Status</h3>
+          
+          {/* Atrial Sensors */}
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-600 mb-2">Atrial Wire</h4>
+            <div className="flex justify-around">
+              <div className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full transition-all duration-300 ${
+                  aSensorActive ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50" : "bg-gray-300"
+                }`} />
+                <span className="mt-1 text-xs text-gray-600">A-Pace</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full transition-all duration-300 ${
+                  !aSensorActive ? "bg-blue-400 animate-pulse shadow-lg shadow-blue-400/50" : "bg-gray-300"
+                }`} />
+                <span className="mt-1 text-xs text-gray-600">A-Sense</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Ventricular Sensors */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-600 mb-2">Ventricular Wire</h4>
+            <div className="flex justify-around">
+              <div className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full transition-all duration-300 ${
+                  vSensorActive ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50" : "bg-gray-300"
+                }`} />
+                <span className="mt-1 text-xs text-gray-600">V-Pace</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className={`w-12 h-12 rounded-full transition-all duration-300 ${
+                  !vSensorActive ? "bg-blue-400 animate-pulse shadow-lg shadow-blue-400/50" : "bg-gray-300"
+                }`} />
+                <span className="mt-1 text-xs text-gray-600">V-Sense</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Status indicator */}
+          <div className="mt-3 text-center">
+            <span className="text-xs text-gray-500">
+              {currentStepIndex <= 8 ? "Testing Atrial Wire" : "Testing Ventricular Wire"}
+            </span>
+          </div>
+        </div>
+      );
+    } else {
+      // Module 1 & 3: Single sensor pair (existing code)
+      return (
+        <div className="bg-[#F0F6FE] rounded-xl p-4">
+          <h3 className="mb-4 font-bold">Sensing Status</h3>
+          <div className="flex justify-around">
+            <div className="flex flex-col items-center">
+              <div className={`w-16 h-16 rounded-full transition-all duration-300 ${
+                sensorStates.left ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50" : "bg-gray-300"
+              }`} />
+              <span className="mt-2 text-sm text-gray-600">Pace</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className={`w-16 h-16 rounded-full transition-all duration-300 ${
+                sensorStates.right ? "bg-blue-400 animate-pulse shadow-lg shadow-blue-400/50" : "bg-gray-300"
+              }`} />
+              <span className="mt-2 text-sm text-gray-600">Sense</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  };
+
+
 
   // Quiz completion effect (unchanged)
   useEffect(() => {
@@ -1204,7 +1314,7 @@ const ModulePage = () => {
               </div>
             )}
 
-            <div className="bg-[#F0F6FE] rounded-xl p-4">
+            {/* <div className="bg-[#F0F6FE] rounded-xl p-4">
               <h3 className="mb-4 font-bold">Sensing Status</h3>
               <div className="flex justify-around">
                 <div className="flex flex-col items-center">
@@ -1228,7 +1338,9 @@ const ModulePage = () => {
                   <span className="mt-2 text-sm text-gray-600">Sense</span>
                 </div>
               </div>
-            </div>
+            </div> */}
+
+            {renderSensorLights()}   {/* replaces the sensing logic   */}
 
             <div className="bg-[#F0F6FE] rounded-xl p-4">
               <h3 className="mb-2 font-bold">Patient's Intrinsic HR</h3>
