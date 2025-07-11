@@ -214,8 +214,8 @@ const SettingsPage = () => {
         </div>
 
         <div className="space-y-4">
-          {/* View Tutorial */}
-          <div className="p-4 bg-[#F0F6FE] rounded-xl hover:bg-blue-100 transition-colors cursor-pointer">
+          {/* View Tutorial - did not make one, maybe one later on??? */}
+          {/* <div className="p-4 bg-[#F0F6FE] rounded-xl hover:bg-blue-100 transition-colors cursor-pointer">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <HelpCircle className="w-5 h-5 text-gray-600" />
@@ -228,7 +228,7 @@ const SettingsPage = () => {
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
-          </div>
+          </div> */}
 
           {/* About PaceSim */}
           <div
@@ -250,43 +250,6 @@ const SettingsPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Debug Info (Development only) */}
-      {/* {process.env.NODE_ENV === "development" && (
-        <div className="w-full px-8 py-6 bg-white shadow-lg rounded-3xl border-2 border-dashed border-gray-300">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Debug Info</h3>
-          <div className="text-sm text-gray-600 space-y-2">
-            <p>
-              <strong>Connection Mode:</strong> {settings.hardwareConnection}
-            </p>
-            <p>
-              <strong>Sound Enabled:</strong>{" "}
-              {settings.soundEnabled ? "Yes" : "No"}
-            </p>
-            <p>
-              <strong>Notifications:</strong>{" "}
-              {settings.notifications ? "Yes" : "No"}
-            </p>
-            <p>
-              <strong>LocalStorage Keys:</strong>
-            </p>
-            <ul className="ml-4 list-disc space-y-1">
-              <li>
-                connectionMode:{" "}
-                {localStorage.getItem("connectionMode") || "not set"}
-              </li>
-              <li>
-                soundEnabled:{" "}
-                {localStorage.getItem("soundEnabled") || "not set"}
-              </li>
-              <li>
-                notifications:{" "}
-                {localStorage.getItem("notifications") || "not set"}
-              </li>
-            </ul>
-          </div>
-        </div>
-      )} */}
     </div>
   );
 };
