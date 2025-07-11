@@ -1,5 +1,4 @@
-import { useState } from "react"; // Remove useEffect import
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
@@ -13,8 +12,20 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, signup } = useAuth();
-  const navigate = useNavigate();
+  const { login, signup, isAuthenticated, currentUser } = useAuth();
+
+  // Monitor authentication state changes
+  useEffect(() => {
+    console.log("🔧 LoginPage: Auth state changed", {
+      isAuthenticated,
+      currentUser: currentUser?.name || null
+    });
+    
+    if (isAuthenticated) {
+      console.log("✅ LoginPage: User is now authenticated, App should redirect soon...");
+      window.location.href = "/dashboard";
+    }
+  }, [isAuthenticated, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,29 +54,29 @@ const LoginPage = () => {
       let result;
 
       if (isLogin) {
-        console.log("🔐 Attempting login for:", username);
+        console.log("🔐 LoginPage: Attempting login for:", username);
         result = await login(username, password);
       } else {
-        console.log("📝 Attempting signup for:", username);
+        console.log("📝 LoginPage: Attempting signup for:", username);
         result = await signup(username, password, name, role, institution);
       }
 
       if (result.success) {
-        console.log("✅ Auth successful, navigating to dashboard...");
-        navigate("/dashboard");
+        console.log("✅ LoginPage: Auth successful, waiting for App.tsx to redirect...");
+        // Keep form in submitting state until redirect happens
+        // setIsSubmitting(false); // Don't reset this - let the redirect handle it
       } else {
         setError(result.error || "Authentication failed");
-        console.log("❌ Auth failed:", result.error);
+        console.log("❌ LoginPage: Auth failed:", result.error);
+        setIsSubmitting(false);
       }
     } catch (err) {
-      console.error("Auth error:", err);
+      console.error("❌ LoginPage: Auth error:", err);
       setError("Something went wrong. Please try again.");
-    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ... rest of your component stays exactly the same
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setError("");
@@ -89,152 +100,143 @@ const LoginPage = () => {
 
         <div className="bg-white px-8 py-6 rounded-2xl shadow-xl">
           <h2 className="text-2xl font-bold text-center mb-6">
-            {isLogin ? "Sign In" : "Create Account"}
+            {isLogin ? "Sign In" : "Sign Up"}
           </h2>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                htmlFor="username"
-                className="block mb-1 text-sm font-medium text-gray-700"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email/Username <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your email or username"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={isSubmitting}
+                required
               />
             </div>
 
             {!isLogin && (
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your full name"
-                  disabled={isSubmitting}
-                />
-              </div>
-            )}
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isSubmitting}
+                    required={!isLogin}
+                  />
+                </div>
 
-            {!isLogin && (
-              <div>
-                <label
-                  htmlFor="role"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
-                  Role/Title
-                </label>
-                <input
-                  id="role"
-                  type="text"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Cardiac Nurse"
-                  disabled={isSubmitting}
-                />
-              </div>
-            )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isSubmitting}
+                    required={!isLogin}
+                  >
+                    <option value="">Select your role</option>
 
-            {!isLogin && (
-              <div>
-                <label
-                  htmlFor="institution"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
-                  Institution
-                </label>
-                <input
-                  id="institution"
-                  type="text"
-                  value={institution}
-                  onChange={(e) => setInstitution(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Johns Hopkins Hospital"
-                  disabled={isSubmitting}
-                />
-              </div>
+                    <option disabled className="text-gray-500">— Administrative Roles —</option>
+                    <option value="Head Nurse">Nurse Manager</option>
+                    <option value="Nursing Supervisor">Nursing Supervisor</option>
+
+                    <option disabled className="text-gray-500">— Nursing Staff —</option>
+                    <option value="Nursing Student">Nursing Student</option>
+                    <option value="Staff Nurse">Staff Nurse</option>
+                    <option value="Charge Nurse">Charge Nurse</option>
+
+                    <option disabled className="text-gray-500">— Other Healthcare —</option>
+                    <option value="other">Other Medical Staff</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Institution
+                  </label>
+                  <input
+                    type="text"
+                    value={institution}
+                    onChange={(e) => setInstitution(e.target.value)}
+                    placeholder="Enter your institution"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </>
             )}
 
             <div>
-              <label
-                htmlFor="password"
-                className="block mb-1 text-sm font-medium text-gray-700"
-              >
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Password <span className="text-red-500">*</span>
               </label>
               <input
                 type="password"
-                id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={isSubmitting}
+                required
               />
             </div>
 
             {!isLogin && (
               <div>
-                <label
-                  htmlFor="confirm-password"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="password"
-                  id="confirm-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Confirm your password"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={isSubmitting}
+                  required={!isLogin}
                 />
-              </div>
-            )}
-
-            {error && (
-              <div className="p-3 text-sm text-red-600 rounded-lg bg-red-50">
-                {error}
               </div>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full px-4 py-2 text-white bg-blue-600 rounded-md shadow hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting
                 ? isLogin
-                  ? "Signing in..."
-                  : "Creating account..."
+                  ? "Signing In..."
+                  : "Signing Up..."
                 : isLogin
-                  ? "Sign In"
-                  : "Create Account"}
+                ? "Sign In"
+                : "Sign Up"}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <button
               onClick={toggleMode}
+              className="text-blue-600 hover:text-blue-800 text-sm"
               disabled={isSubmitting}
-              className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
             >
               {isLogin
                 ? "Don't have an account? Sign up"
@@ -242,16 +244,14 @@ const LoginPage = () => {
             </button>
           </div>
 
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-center text-gray-600">
-              <strong>Security:</strong> Passwords are hashed with bcrypt
-            </p>
+          <div className="mt-4 text-center text-xs text-gray-500">
+            Security: Passwords are hashed with bcrypt
           </div>
         </div>
 
-        <p className="mt-8 text-sm text-center text-gray-500">
-          © {new Date().getFullYear()} PaceSim. All rights reserved.
-        </p>
+        <div className="mt-8 text-center text-sm text-gray-500">
+          © 2025 PaceSim. All rights reserved.
+        </div>
       </div>
     </div>
   );
