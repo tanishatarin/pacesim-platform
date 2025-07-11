@@ -1063,61 +1063,76 @@ const ModulePage = () => {
                   )}
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  {/* Row 1: Rate (always full width when present) */}
                   {currentModule.controlsNeeded.rate && (
-                    <CustomSlider
-                      label="Pacemaker Rate"
-                      value={pacemakerParams.rate}
-                      onChange={(value) =>
-                        handleModuleParameterChange("rate", value)
-                      }
-                      type="rate"
-                      onParameterChange={handleParameterChange}
-                    />
+                    <div className="w-full">
+                      <CustomSlider
+                        label="Pacemaker Rate"
+                        value={pacemakerParams.rate}
+                        onChange={(value) =>
+                          handleModuleParameterChange("rate", value)
+                        }
+                        type="rate"
+                        onParameterChange={handleParameterChange}
+                      />
+                    </div>
                   )}
-                  {currentModule.controlsNeeded.aOutput && (
-                    <CustomSlider
-                      label="Atrial Output"
-                      value={pacemakerParams.aOutput}
-                      onChange={(value) =>
-                        handleModuleParameterChange("aOutput", value)
-                      }
-                      type="aOutput"
-                      onParameterChange={handleParameterChange}
-                    />
+
+                  {/* Row 2: Atrial Controls (A Output + A Sensitivity) */}
+                  {(currentModule.controlsNeeded.aOutput || currentModule.controlsNeeded.aSensitivity) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {currentModule.controlsNeeded.aOutput && (
+                        <CustomSlider
+                          label="Atrial Output"
+                          value={pacemakerParams.aOutput}
+                          onChange={(value) =>
+                            handleModuleParameterChange("aOutput", value)
+                          }
+                          type="aOutput"
+                          onParameterChange={handleParameterChange}
+                        />
+                      )}
+                      {currentModule.controlsNeeded.aSensitivity && (
+                        <CustomSlider
+                          label="Atrial Sensitivity"
+                          value={pacemakerParams.aSensitivity}
+                          onChange={(value) =>
+                            handleModuleParameterChange("aSensitivity", value)
+                          }
+                          type="aSensitivity"
+                          onParameterChange={handleParameterChange}
+                        />
+                      )}
+                    </div>
                   )}
-                  {currentModule.controlsNeeded.vOutput && (
-                    <CustomSlider
-                      label="Ventricular Output"
-                      value={pacemakerParams.vOutput}
-                      onChange={(value) =>
-                        handleModuleParameterChange("vOutput", value)
-                      }
-                      type="vOutput"
-                      onParameterChange={handleParameterChange}
-                    />
-                  )}
-                  {currentModule.controlsNeeded.aSensitivity && (
-                    <CustomSlider
-                      label="Atrial Sensitivity"
-                      value={pacemakerParams.aSensitivity}
-                      onChange={(value) =>
-                        handleModuleParameterChange("aSensitivity", value)
-                      }
-                      type="aSensitivity"
-                      onParameterChange={handleParameterChange}
-                    />
-                  )}
-                  {currentModule.controlsNeeded.vSensitivity && (
-                    <CustomSlider
-                      label="Ventricular Sensitivity"
-                      value={pacemakerParams.vSensitivity}
-                      onChange={(value) =>
-                        handleModuleParameterChange("vSensitivity", value)
-                      }
-                      type="vSensitivity"
-                      onParameterChange={handleParameterChange}
-                    />
+
+                  {/* Row 3: Ventricular Controls (V Output + V Sensitivity) */}
+                  {(currentModule.controlsNeeded.vOutput || currentModule.controlsNeeded.vSensitivity) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {currentModule.controlsNeeded.vOutput && (
+                        <CustomSlider
+                          label="Ventricular Output"
+                          value={pacemakerParams.vOutput}
+                          onChange={(value) =>
+                            handleModuleParameterChange("vOutput", value)
+                          }
+                          type="vOutput"
+                          onParameterChange={handleParameterChange}
+                        />
+                      )}
+                      {currentModule.controlsNeeded.vSensitivity && (
+                        <CustomSlider
+                          label="Ventricular Sensitivity"
+                          value={pacemakerParams.vSensitivity}
+                          onChange={(value) =>
+                            handleModuleParameterChange("vSensitivity", value)
+                          }
+                          type="vSensitivity"
+                          onParameterChange={handleParameterChange}
+                        />
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
