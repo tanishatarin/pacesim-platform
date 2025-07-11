@@ -312,16 +312,14 @@ const ProfilePage = () => {
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">
-                        Role/Title
+                      Role/Title
                       </label>
                       <input
-                        type="text"
-                        value={editedUser.role || ""}
-                        onChange={(e) =>
-                          setEditedUser({ ...editedUser, role: e.target.value })
-                        }
-                        className="text-sm text-gray-600 bg-gray-50 border border-gray-300 rounded-md px-2 py-1 w-full"
-                        placeholder="e.g., Cardiac Nurse, Medical Student"
+                      type="text"
+                      value={editedUser.role || ""}
+                      disabled
+                      className="text-sm text-gray-400 bg-gray-100 border border-gray-200 rounded-md px-2 py-1 w-full cursor-not-allowed"
+                      placeholder="e.g., Cardiac Nurse, Medical Student"
                       />
                     </div>
                     <div>
