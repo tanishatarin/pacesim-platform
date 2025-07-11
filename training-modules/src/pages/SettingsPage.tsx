@@ -214,7 +214,7 @@ const SettingsPage = () => {
         </div>
 
         <div className="space-y-4">
-          {/* View Tutorial - did not make one, maybe one later on??? */}
+          {/* View Tutorial - did not make one, maybe one later on???*/}
           {/* <div className="p-4 bg-[#F0F6FE] rounded-xl hover:bg-blue-100 transition-colors cursor-pointer">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">

@@ -156,7 +156,7 @@ const LoginPage = () => {
                     <option value="">Select your role</option>
 
                     <option disabled className="text-gray-500">— Administrative Roles —</option>
-                    <option value="Head Nurse">Nurse Manager</option>
+                    <option value="Head Nurse">Head Nurse</option>
                     <option value="Nursing Supervisor">Nursing Supervisor</option>
 
                     <option disabled className="text-gray-500">— Nursing Staff —</option>
