@@ -1,14 +1,3 @@
-// 
-
-
-
-
-
-
-
-// jully 11 
-
-
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, User, Settings, BookOpen, LogOut, BarChart3 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth"; // Add this import
@@ -83,15 +72,6 @@ const Layout = ({ onLogout }: LayoutProps) => {
                     </Link>
                   );
                 })}
-                {process.env.NODE_ENV === "development" && (
-                  <Link
-                    to="/debug"
-                    className="text-xs text-red-600 hover:text-red-800"
-                    title="Developer Debug Panel"
-                  >
-                    🐛 Debug
-                  </Link>
-                )}
               </nav>
             </div>
 
