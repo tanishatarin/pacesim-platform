@@ -1,3 +1,5 @@
+/// july 10 trying add in bp/hr changing 
+
 export interface ModuleStep {
   id: string;
   objective: string;
@@ -14,6 +16,11 @@ export interface ModuleStep {
   flashingSensor?: "left" | "right" | null;
   completionCriteria?: (currentParams: any, targetValues: any) => boolean;
   hint?: string;
+  // 🆕 NEW: Patient vitals that can change per step
+  patientVitals?: {
+    intrinsicHeartRate?: number;
+    bloodPressure?: string; // Format: "120/80" or "85/50"
+  };
 }
 
 export interface ModuleConfig {
@@ -29,6 +36,11 @@ export interface ModuleConfig {
     vOutput: number;
     aSensitivity: number;
     vSensitivity: number;
+  };
+  // 🆕 NEW: Default patient vitals for the module
+  defaultPatientVitals: {
+    intrinsicHeartRate: number;
+    bloodPressure: string;
   };
 }
 
@@ -113,6 +125,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
       aSensitivity: 1,
       vSensitivity: 2,
     },
+    // 🆕 NEW: Default patient vitals for this module
+    defaultPatientVitals: {
+      intrinsicHeartRate: 40,
+      bloodPressure: "120/80", // Normal BP initially
+    },
     steps: [
       {
         id: "step1",
@@ -124,6 +141,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "right",
         completionCriteria: defaultCompletionCriteria,
         hint: "Use the rate control to decrease the pacing rate below the patient's intrinsic rate",
+        // 🆕 NEW: Patient vitals remain the same for this step
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "120/80",
+        },
       },
       {
         id: "step2",
@@ -135,6 +157,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "left",
         completionCriteria: defaultCompletionCriteria,
         hint: "Lower the atrial output to find the minimum capture threshold",
+        // 🆕 NEW: Still normal vitals
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "120/80",
+        },
       },
       {
         id: "step3",
@@ -146,6 +173,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "left",
         completionCriteria: defaultCompletionCriteria,
         hint: "Start with a lower sensitivity value and gradually increase",
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "120/80",
+        },
       },
       {
         id: "step4",
@@ -155,8 +186,12 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         targetValues: { aSensitivity: 1.6 },
         allowedControls: ["aSensitivity"],
         flashingSensor: "left",
-        completionCriteria: sensingThresholdCriteria, // USE THE CUSTOM FUNCTION HERE
+        completionCriteria: sensingThresholdCriteria,
         hint: "The sensing light represents the pacemaker detecting intrinsic cardiac activity. When you reach the threshold, it stops flashing.",
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "120/80",
+        },
       },
       {
         id: "step5",
@@ -168,6 +203,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "left",
         completionCriteria: defaultCompletionCriteria,
         hint: "Use half the threshold value to ensure reliable sensing with a safety margin",
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "120/80",
+        },
       },
       {
         id: "step6",
@@ -179,6 +218,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "left",
         completionCriteria: defaultCompletionCriteria,
         hint: "Set the rate slightly above the patient's intrinsic rate to ensure pacing",
+        // 🆕 NEW: Patient's BP improves slightly with higher rate
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "130/85", // Slight improvement
+        },
       },
       {
         id: "step7",
@@ -190,6 +234,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "left",
         completionCriteria: defaultCompletionCriteria,
         hint: "Gradually increase output until you see consistent capture after each pacing spike",
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "130/85",
+        },
       },
       {
         id: "step8",
@@ -201,6 +249,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: "left",
         completionCriteria: defaultCompletionCriteria,
         hint: "Double the threshold ensures reliable capture with safety margin",
+        patientVitals: {
+          intrinsicHeartRate: 40,
+          bloodPressure: "130/85",
+        },
       },
       {
         id: "step9",
@@ -211,6 +263,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         flashingSensor: null,
         completionCriteria: defaultCompletionCriteria,
         hint: "Return to the prescribed pacing rate now that thresholds are established",
+        // 🆕 NEW: With proper pacing at 80 BPM, patient's BP normalizes
+        patientVitals: {
+          intrinsicHeartRate: 40, // Still bradycardic without pacing
+          bloodPressure: "140/90", // Much better with adequate pacing
+        },
       },
     ],
   },
@@ -231,6 +288,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
       aSensitivity: 1,
       vSensitivity: 1,
     },
+    // 🆕 NEW: Critical patient with poor hemodynamics
+    defaultPatientVitals: {
+      intrinsicHeartRate: 30, // Very slow escape rhythm
+      bloodPressure: "85/50", // Hypotensive due to bradycardia
+    },
     steps: [
       {
         id: "td_step1",
@@ -241,6 +303,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["rate"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Ensures non-pacing because set rate is below patient's intrinsic rate",
+        // 🆕 NEW: Patient remains critically bradycardic and hypotensive
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "85/50", // Still hypotensive
+        },
       },
       {
         id: "td_step2",
@@ -251,6 +318,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Capture is not likely because output is at minimum",
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "85/50",
+        },
       },
       {
         id: "td_step3",
@@ -261,6 +332,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vSensitivity"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Start with highest sensitivity for V wires",
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "85/50",
+        },
       },
       {
         id: "td_step4",
@@ -271,6 +346,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vSensitivity"],
         completionCriteria: vSensingThresholdCriteria,
         hint: "Sensing threshold occurs at 2.0mV in this scenario",
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "85/50",
+        },
       },
       {
         id: "td_step5",
@@ -281,6 +360,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vSensitivity"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Half threshold provides safety margin",
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "85/50",
+        },
       },
       {
         id: "td_step6",
@@ -291,6 +374,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["rate"],
         completionCriteria: defaultCompletionCriteria,
         hint: "10 BPM above patient's intrinsic escape rate",
+        // 🆕 NEW: Rate increases but no capture yet, so minimal BP improvement
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "90/55", // Slight improvement from attempted pacing
+        },
       },
       {
         id: "td_step7",
@@ -301,6 +389,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Getting close to capture at 5mA",
+        // 🆕 NEW: Partial capture improves HR and BP
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "95/60", // Better with partial capture
+        },
       },
       {
         id: "td_step8",
@@ -311,6 +404,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Full 1:1 capture occurs at 7mA",
+        // 🆕 NEW: Full capture at 40 BPM significantly improves hemodynamics
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "110/70", // Much better with reliable pacing
+        },
       },
       {
         id: "td_step9",
@@ -321,6 +419,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Double the threshold for safety margin",
+        patientVitals: {
+          intrinsicHeartRate: 30,
+          bloodPressure: "110/70", // Stable with safety margin
+        },
       },
       {
         id: "td_step10",
@@ -330,6 +432,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["rate"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Final prescribed rate",
+        // 🆕 NEW: Optimal pacing at 80 BPM restores normal hemodynamics
+        patientVitals: {
+          intrinsicHeartRate: 30, // Still in complete heart block
+          bloodPressure: "125/80", // Excellent hemodynamics with proper pacing
+        },
       },
     ],
   },
@@ -350,28 +457,12 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
       aSensitivity: 2,
       vSensitivity: 2,
     },
+    // 🆕 NEW: Post-medication bradycardia with poor perfusion
+    defaultPatientVitals: {
+      intrinsicHeartRate: 38, // Medication-induced bradycardia
+      bloodPressure: "77/43", // Severely hypotensive
+    },
     steps: [
-      // Initial wire testing (before A fib develops)
-      // {
-      //   id: "afib_step1",
-      //   objective: "FAKE LOL but set rate to 80",
-      //   instruction:
-      //     "Set rate to 64, A sensitivity to 0.4mV, then slowly increase until sensing threshold found",
-      //   targetValues: { rate: 80 },
-      //   allowedControls: ["rate"],
-      //   completionCriteria: sensingThresholdCriteria,
-      //   hint: "A wire sensing threshold is 0.4mV in this scenario",
-      // },
-      // {
-      //   id: "afib_step2",
-      //   objective: "FAKE LOL but set rate to 180",
-      //   instruction:
-      //     "Set aSensitivity to half the threshold (0.2mV) for safety margin",
-      //   targetValues: { rate: 180},
-      //   allowedControls: ["rate"],
-      //   completionCriteria: defaultCompletionCriteria,
-      //   hint: "Half threshold for safety",
-      // },
       {
         id: "afib_step1",
         objective: "Check A wire sensitivity to 4mV threshold",
@@ -381,6 +472,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["aSensitivity", "rate"],
         completionCriteria: sensingThresholdCriteria,
         hint: "A wire sensing threshold is 4mV in this scenario",
+        // 🆕 NEW: During wire testing, patient remains critically bradycardic
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "77/43", // Still critical
+        },
       },
       {
         id: "afib_step2",
@@ -391,6 +487,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["aSensitivity"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Half threshold for safety",
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "77/43",
+        },
       },
       {
         id: "afib_step3",
@@ -401,6 +501,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["aOutput", "rate"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Close to A capture at 10mA",
+        // 🆕 NEW: Some atrial capture starting to help
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "85/50", // Slight improvement with attempted atrial pacing
+        },
       },
       {
         id: "afib_step4",
@@ -411,6 +516,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["aOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Full atrial capture at 12mA",
+        // 🆕 NEW: Full atrial capture improves rate and perfusion
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "95/60", // Better with atrial contribution
+        },
       },
       {
         id: "afib_step5",
@@ -421,6 +531,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["aOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Double threshold for safety",
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "95/60", // Stable with safety margin
+        },
       },
       // V wire testing
       {
@@ -432,6 +546,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vSensitivity"],
         completionCriteria: vSensingThresholdCriteria,
         hint: "V sensing threshold is 5mV in this scenario",
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "95/60",
+        },
       },
       {
         id: "afib_step7",
@@ -442,6 +560,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vSensitivity"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Half threshold for safety margin",
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "95/60",
+        },
       },
       {
         id: "afib_step8",
@@ -452,6 +574,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Close to V capture at 8mA",
+        // 🆕 NEW: Adding ventricular pacing improves hemodynamics further
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "105/65", // Better with dual chamber support
+        },
       },
       {
         id: "afib_step9",
@@ -462,6 +589,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Full ventricular capture at 10mA",
+        // 🆕 NEW: Full dual chamber support significantly improves perfusion
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "115/70", // Excellent with both A and V pacing
+        },
       },
       {
         id: "afib_step10",
@@ -471,6 +603,10 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["vOutput"],
         completionCriteria: defaultCompletionCriteria,
         hint: "Double threshold for safety",
+        patientVitals: {
+          intrinsicHeartRate: 38,
+          bloodPressure: "115/70", // Stable with safety margins
+        },
       },
       // Patient develops A fib and needs VVI pacing
       {
@@ -482,6 +618,11 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         allowedControls: ["rate"],
         completionCriteria: defaultCompletionCriteria,
         hint: "VVI pacing needed due to medication-induced bradycardia in A fib",
+        // 🆕 NEW: Optimal VVI pacing at 80 BPM restores excellent hemodynamics despite A fib
+        patientVitals: {
+          intrinsicHeartRate: 38, // Still medication-suppressed
+          bloodPressure: "130/80", // Excellent perfusion with proper VVI pacing
+        },
       },
     ],
   },
