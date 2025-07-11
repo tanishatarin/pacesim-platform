@@ -49,10 +49,10 @@ const ModulesListPage = () => {
   const modules: ModuleData[] = [
     {
       id: 1,
-      title: "Scenario 1: Bradycardia Management",
+      title: "Scenario 1",
       description:
         "Learn to diagnose and correct bradycardia with atrial pacing. Practice sensitivity testing and capture threshold procedures.",
-      estimatedDuration: "15-20 min",
+      estimatedDuration: "< 5 min",
       difficulty: "Beginner",
       learningObjectives: [
         "Identify bradycardia on ECG",
@@ -63,25 +63,11 @@ const ModulesListPage = () => {
     },
     {
       id: 2,
-      title: "Scenario 2: Third Degree Heart Block",
-      description:
-        "Manage complete heart block with ventricular pacing. Learn VVI mode setup and threshold testing procedures.",
-      estimatedDuration: "20-25 min",
-      difficulty: "Intermediate",
-      learningObjectives: [
-        "Recognize third degree AV block patterns",
-        "Perform ventricular sensitivity testing",
-        "Establish ventricular capture thresholds",
-        "Understand ventricular pacing modes",
-      ],
-    },
-    {
-      id: 3,
-      title: "Scenario 3: Atrial Fibrillation with Bradycardia",
+      title: "Scenario 2",
       description:
         "Handle A fib patient who develops bradycardia after rate control medications. Practice dual-chamber testing and VVI conversion.",
-      estimatedDuration: "25-30 min",
-      difficulty: "Advanced",
+      estimatedDuration: "5 - 10 min",
+      difficulty: "Intermediate",
       learningObjectives: [
         "Test both atrial and ventricular lead thresholds",
         "Understand when atrial pacing is inappropriate",
@@ -89,6 +75,20 @@ const ModulesListPage = () => {
         "Manage medication-induced bradycardia",
       ],
     },
+    {
+      id: 3,
+      title: "Scenario 3",
+      description:
+        "Manage complete heart block with ventricular pacing. Learn VVI mode setup and threshold testing procedures.",
+      estimatedDuration: "< 5 min",
+      difficulty: "Intermediate",
+      learningObjectives: [
+        "Recognize third degree AV block patterns",
+        "Perform ventricular sensitivity testing",
+        "Establish ventricular capture thresholds",
+        "Understand ventricular pacing modes",
+      ],
+    }
   ];
 
   useEffect(() => {

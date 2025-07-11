@@ -1,9 +1,4 @@
-// july 10 -  hr & bp can chnage - but resume does nto work + these values are wrong right now ! 
-
-
-
-
- import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -21,10 +16,8 @@ import { useStepController } from "../hooks/useStepController";
 import { useAuth } from "../hooks/useAuth";
 import { useSession } from "../hooks/useSession";
 import { usePacemakerData } from "../hooks/usePacemakerData";
-// 🔥 NEW IMPORTS - Import from the enhanced moduleSteps
 import { moduleConfigs } from "../data/moduleSteps";
 
-// 🔥 NEW - Helper function for patient vitals
 interface PatientVitals {
   intrinsicHeartRate: number;
   bloodPressure: string;
@@ -103,9 +96,10 @@ interface SimpleModuleConfig {
 // 🔥 SIMPLIFIED - Just the UI-specific configs (no patient vitals here - those come from moduleSteps)
 const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
   "1": {
-    title: "Scenario 1: Bradycardia Management",
+    title: "Scenario 1",
     objective:
-      "Diagnose and correct a failure to sense condition. Complete the knowledge check and then adjust the pacemaker.\n\nScenario: You return to a patient's room and observe this ECG pattern. Their heart rate has dropped to 40 BPM and atrial leads are connected.",
+      "Diagnose and correct a failure to sense condition. Complete the knowledge check and then adjust the pacemaker.\n\n" +
+       "Scenario: You return to a patient's room and observe this ECG pattern. Their heart rate has dropped to 40 BPM and atrial leads are connected.",
     mode: "sensitivity",
     initialParams: {
       rate: 40,
@@ -124,9 +118,10 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
   },
 
   "2": {
-    title: "Scenario 2: Third Degree Heart Block",
+    title: "Scenario 2",
     objective:
-      "Diagnose and manage third degree heart block with appropriate VVI pacing settings.\n\nScenario: POD 3 MVR patient feeling 'funny'. HR is 30, BP is 85/50 MAP (62). You have 1V and 1 skin wire available.",
+      "Diagnose and manage third degree heart block with appropriate VVI pacing settings.\n\n" +
+      "Scenario: POD 3 MVR patient feeling 'funny'. HR is 30, BP is 85/50 MAP (62). You have 1V and 1A wire.",
     mode: "third_degree_block",
     initialParams: {
       rate: 30,
@@ -137,20 +132,22 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
     },
     controlsNeeded: {
       rate: true,
-      aOutput: false,
+      aOutput: true,
       vOutput: true,
-      aSensitivity: false,
+      aSensitivity: true,
       vSensitivity: true,
     },
   },
 
   "3": {
-    title: "Scenario 3: Atrial Fibrillation with Bradycardia",
+    title: "Scenario 3",
     objective:
-      "Manage atrial fibrillation patient who developed bradycardia after rate control medications.\n\nScenario: POD 3 AVR patient developed A fib with rapid rate. After amiodarone and metoprolol, HR dropped to 38 with BP 77/43 MAP (54). Patient still in A fib.",
+      "Manage atrial fibrillation patient who developed bradycardia after rate control medications.\n\n"
+      + "Scenario: POD 3 AVR patient developed A fib with rapid rate. After amiodarone and metoprolol, HR dropped to" +
+       " 38. Patient still in A fib. You have 1V wire and 1 skin wire",
     mode: "atrial_fibrillation",
     initialParams: {
-      rate: 38,
+      rate: 30,
       aOutput: 5,
       vOutput: 1,
       aSensitivity: 2,
@@ -158,9 +155,9 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
     },
     controlsNeeded: {
       rate: true,
-      aOutput: true,
+      aOutput: false,
       vOutput: true,
-      aSensitivity: true,
+      aSensitivity: false,
       vSensitivity: true,
     },
   },
