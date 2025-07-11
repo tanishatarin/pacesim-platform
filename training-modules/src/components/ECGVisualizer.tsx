@@ -1,253 +1,7 @@
-// import { useEffect, useState, useMemo } from "react";
-// import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
-// import {
-//   generateNormalPacingPoints,
-//   generateBradycardiaPoints,
-//   generateAtrialFibrillationPoints,
-//   generateThirdDegreeBlockPoints,
-// } from "@/components/ecgModes";
-// import type { ModuleStep } from "@/types/module";
-
-// interface ECGVisualizerProps {
-//   rate?: number;
-//   aOutput?: number;
-//   vOutput?: number;
-//   sensitivity?: number;
-//   mode?: "sensitivity" | "third_degree_block" | "atrial_fibrillation";
-//   // ADD THESE PROPS TO FIX THE PHASE DETECTION:
-//   currentStep?: ModuleStep | null;
-//   currentStepIndex?: number;
-//   quizCompleted?: boolean; // To force quiz mode when false
-// }
-
-// const speedMultipliers: Record<string, number> = {
-//   initial: 1,
-//   sensitivity: 1,
-//   oversensing: 1,
-//   undersensing: 1,
-//   capture_module: 2.5,
-//   failure_to_capture: 2,
-// };
-
-// const ECGVisualizer = ({
-//   rate = 150,
-//   aOutput = 5,
-//   vOutput = 5,
-//   sensitivity = 1,
-//   mode = "sensitivity",
-//   currentStep = null,
-//   currentStepIndex = 0,
-//   quizCompleted = false, // Default to quiz mode
-// }: ECGVisualizerProps) => {
-//   type Point = { x: number; y: number };
-
-//   const [data, setData] = useState<Point[]>([]);
-//   const [currentIndex, setCurrentIndex] = useState(0);
-
-//   // Define the base complex with physiologically accurate wave morphology
-//   const baseComplex = [
-//     { x: 0, y: 0 }, // Baseline
-//     { x: 1, y: 0.1 }, // P wave start
-//     { x: 2, y: 0.25 }, // P wave peak
-//     { x: 3, y: 0.1 }, // P wave end
-//     { x: 4, y: 0 }, // PR segment
-//     { x: 5, y: -0.2 }, // Q wave
-//     { x: 6, y: 1.5 }, // R wave peak (normal amplitude around 1.5mV)
-//     { x: 7, y: -0.4 }, // S wave
-//     { x: 8, y: -0.1 }, // J point
-//     { x: 9, y: 0 }, // ST segment
-//     { x: 10, y: 0.1 }, // T wave start
-//     { x: 11, y: 0.4 }, // T wave peak
-//     { x: 12, y: 0.1 }, // T wave end
-//     { x: 13, y: 0 }, // Baseline
-//     { x: 14, y: 0 }, // Baseline
-//     { x: 15, y: 0 }, // Baseline
-//   ];
-
-//   // Generate multiple complexes with amplitude adjustments
-//   const generatePoints = (): Point[] => {
-//     console.log("🎯 ECG generatePoints called with:", {
-//       mode,
-//       rate,
-//       aOutput,
-//       vOutput,
-//       sensitivity,
-//       currentStep: currentStep?.id || "none",
-//       currentStepIndex,
-//       quizCompleted,
-//     });
-
-//     let result: Point[] = [];
-
-//     switch (mode) {
-//       case "sensitivity":
-//         console.log("📊 Calling generateBradycardiaPoints...");
-//         result = generateBradycardiaPoints({
-//           rate,
-//           aOutput,
-//           vOutput,
-//           sensitivity,
-//           // PASS THE STEP INFO TO FIX PHASE DETECTION:
-//           currentStep: quizCompleted ? currentStep : null, // Force quiz mode if quiz not completed
-//           currentStepIndex: quizCompleted ? currentStepIndex : 0,
-//         });
-//         break;
-
-//       case "third_degree_block":
-//         console.log("📊 Generating third degree block pattern...");
-//         result = generateThirdDegreeBlockPoints({
-//           rate,
-//           aOutput,
-//           vOutput,
-//           sensitivity,
-//           currentStep: quizCompleted ? currentStep : null,
-//           currentStepIndex: quizCompleted ? currentStepIndex : 0,
-//         });
-//         break;
-
-//       case "atrial_fibrillation":
-//         console.log("📊 Generating atrial fibrillation pattern...");
-//         result = generateAtrialFibrillationPoints({
-//           rate,
-//           aOutput,
-//           vOutput,
-//           sensitivity,
-//           currentStep: quizCompleted ? currentStep : null,
-//           currentStepIndex: quizCompleted ? currentStepIndex : 0,
-//         });
-//         break;
-
-//       default:
-//         console.log(
-//           "⚠️ Unknown ECG mode:",
-//           mode,
-//           "- using bradycardia as fallback",
-//         );
-//         result = generateBradycardiaPoints({
-//           rate,
-//           aOutput,
-//           vOutput,
-//           sensitivity,
-//           currentStep: quizCompleted ? currentStep : null,
-//           currentStepIndex: quizCompleted ? currentStepIndex : 0,
-//         });
-//         break;
-//     }
-
-//     console.log("📈 Generated points:", {
-//       count: result.length,
-//       firstFew: result.slice(0, 3),
-//       lastFew: result.slice(-3),
-//     });
-
-//     return result;
-//   };
-
-//   const points = useMemo(
-//     () => generatePoints(),
-//     [rate, aOutput, vOutput, sensitivity, mode, currentStep?.id, currentStepIndex, quizCompleted],
-//   );
-
-//   useEffect(() => {
-//     setData(points.slice(0, 100));
-//     const speedMultiplier = speedMultipliers[mode] || 1; // fallback = normal speed
-
-//     const updateInterval =
-//       (60000 / rate / baseComplex.length) * speedMultiplier;
-
-//     const interval = setInterval(() => {
-//       setCurrentIndex((prevIndex) => {
-//         const newIndex = (prevIndex + 1) % points.length;
-//         setData((prevData) => {
-//           const newData = [...prevData.slice(1), points[newIndex]];
-//           return newData;
-//         });
-//         return newIndex;
-//       });
-//     }, updateInterval);
-
-//     return () => clearInterval(interval);
-//   }, [points, rate, mode]);
-
-//   return (
-//     <div className="w-full h-64 overflow-hidden bg-black relative rounded-lg">
-//       <div className="absolute inset-0 z-0">
-//         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-//           <defs>
-//             {/* Small 1mm grid */}
-//             <pattern
-//               id="smallGrid"
-//               width="4"
-//               height="4"
-//               patternUnits="userSpaceOnUse"
-//             >
-//               <path
-//                 d="M 4 0 L 0 0 0 4"
-//                 fill="none"
-//                 stroke="#333"
-//                 strokeWidth="0.5"
-//               />
-//             </pattern>
-
-//             {/* Large 5mm grid */}
-//             <pattern
-//               id="largeGrid"
-//               width="20"
-//               height="20"
-//               patternUnits="userSpaceOnUse"
-//             >
-//               <rect width="20" height="20" fill="url(#smallGrid)" />
-//               <path
-//                 d="M 20 0 L 0 0 0 20"
-//                 fill="none"
-//                 stroke="#666"
-//                 strokeWidth="1"
-//               />
-//             </pattern>
-//           </defs>
-
-//           <rect width="100%" height="100%" fill="url(#largeGrid)" />
-//         </svg>
-//       </div>
-
-//       <div className="relative z-10 h-full">
-//         <ResponsiveContainer width="100%" height="100%">
-//           <LineChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-//             <XAxis hide />
-//             <YAxis hide domain={[-2, 2]} />
-//             <Line
-//               type="linear"
-//               dataKey="y"
-//               stroke="#00ff00"
-//               strokeWidth={2}
-//               dot={false}
-//               connectNulls={false}
-//             />
-//           </LineChart>
-//         </ResponsiveContainer>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default ECGVisualizer;
+// made it work, got rid of recharts bc it was nto working. now is html - little old lookign, but works and look scorrect! 
 
 
-
-
-
-
-
-
-
-
-
-
-// debug version 
-
-
-import { useEffect, useState, useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   generateNormalPacingPoints,
   generateBradycardiaPoints,
@@ -287,31 +41,13 @@ const ECGVisualizer = ({
   quizCompleted = false,
 }: ECGVisualizerProps) => {
   type Point = { x: number; y: number };
-
-  const [data, setData] = useState<Point[]>([]);
+  
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const animationRef = useRef<number>(0);
+  const dataWindowRef = useRef<number[]>([]);
 
-  // Define the base complex with physiologically accurate wave morphology
-  const baseComplex = [
-    { x: 0, y: 0 }, // Baseline
-    { x: 1, y: 0.1 }, // P wave start
-    { x: 2, y: 0.25 }, // P wave peak
-    { x: 3, y: 0.1 }, // P wave end
-    { x: 4, y: 0 }, // PR segment
-    { x: 5, y: -0.2 }, // Q wave
-    { x: 6, y: 1.5 }, // R wave peak (normal amplitude around 1.5mV)
-    { x: 7, y: -0.4 }, // S wave
-    { x: 8, y: -0.1 }, // J point
-    { x: 9, y: 0 }, // ST segment
-    { x: 10, y: 0.1 }, // T wave start
-    { x: 11, y: 0.4 }, // T wave peak
-    { x: 12, y: 0.1 }, // T wave end
-    { x: 13, y: 0 }, // Baseline
-    { x: 14, y: 0 }, // Baseline
-    { x: 15, y: 0 }, // Baseline
-  ];
-
-  // Generate multiple complexes with amplitude adjustments
+  // Generate points
   const generatePoints = (): Point[] => {
     console.log("🎯 ECG generatePoints called with:", {
       mode,
@@ -364,11 +100,7 @@ const ECGVisualizer = ({
         break;
 
       default:
-        console.log(
-          "⚠️ Unknown ECG mode:",
-          mode,
-          "- using bradycardia as fallback",
-        );
+        console.log("⚠️ Unknown ECG mode:", mode, "- using bradycardia as fallback");
         result = generateBradycardiaPoints({
           rate,
           aOutput,
@@ -394,121 +126,158 @@ const ECGVisualizer = ({
     [rate, aOutput, vOutput, sensitivity, mode, currentStep?.id, currentStepIndex, quizCompleted],
   );
 
-  useEffect(() => {
-    // 🔥 FIX: Ensure we have enough points to avoid repetition
-    const minRequiredPoints = 200; // Need enough points for smooth scrolling
+  // Draw the ECG
+  const drawECG = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    if (points.length < minRequiredPoints) {
-      console.warn("⚠️ Not enough points generated:", points.length, "Need:", minRequiredPoints);
-      // Extend the points by repeating the pattern
-      const extendedPoints: Point[] = [];
-      const originalLength = points.length;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 0.5;
+    
+    // Small grid (1mm)
+    for (let x = 0; x < canvas.width; x += 4) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    
+    for (let y = 0; y < canvas.height; y += 4) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    // Large grid (5mm)
+    ctx.strokeStyle = '#666666';
+    ctx.lineWidth = 1;
+    
+    for (let x = 0; x < canvas.width; x += 20) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    
+    for (let y = 0; y < canvas.height; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    // Draw ECG line
+    if (dataWindowRef.current.length > 1) {
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
       
-      for (let i = 0; i < minRequiredPoints; i++) {
-        const sourceIndex = i % originalLength;
-        const sourcePoint = points[sourceIndex];
-        extendedPoints.push({
-          x: sourcePoint.x + Math.floor(i / originalLength) * 1600, // Offset repeated patterns
-          y: sourcePoint.y
-        });
+      const xStep = canvas.width / 100; // 100 points across the width
+      const yCenter = canvas.height / 2;
+      const yScale = canvas.height / 4; // Scale to use full height (-2 to 2 range)
+      
+      dataWindowRef.current.forEach((y, i) => {
+        const x = i * xStep;
+        const scaledY = yCenter - (y * yScale);
+        
+        if (i === 0) {
+          ctx.moveTo(x, scaledY);
+        } else {
+          ctx.lineTo(x, scaledY);
+        }
+      });
+      
+      ctx.stroke();
+    }
+  };
+
+  // Animation loop
+  useEffect(() => {
+    if (!points || points.length === 0) {
+      console.error("❌ No points generated!");
+      return;
+    }
+
+    // Initialize data window
+    const windowSize = 100;
+    dataWindowRef.current = [];
+    
+    // Fill initial window
+    for (let i = 0; i < windowSize; i++) {
+      dataWindowRef.current.push(points[i % points.length].y);
+    }
+
+    let pointIndex = windowSize;
+    const speedMultiplier = speedMultipliers[mode] || 1;
+    const baseInterval = 50; // Base update rate in ms
+    
+    // Calculate how many points to advance per frame
+    const pointsPerSecond = rate / 60; // Convert BPM to beats per second
+    const updatesPerSecond = 1000 / baseInterval;
+    const pointsPerUpdate = pointsPerSecond / updatesPerSecond * speedMultiplier;
+    
+    let accumulator = 0;
+
+    const animate = () => {
+      accumulator += pointsPerUpdate;
+      
+      while (accumulator >= 1) {
+        // Shift window and add new point
+        dataWindowRef.current.shift();
+        dataWindowRef.current.push(points[pointIndex % points.length].y);
+        pointIndex++;
+        accumulator -= 1;
+        
+        setCurrentIndex(pointIndex);
       }
       
-      console.log("✅ Extended points from", originalLength, "to", extendedPoints.length);
-      setData(extendedPoints.slice(0, 100));
-      
-      // Use the extended points for animation
-      const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => {
-          const newIndex = (prevIndex + 1) % extendedPoints.length;
-          setData((prevData) => {
-            // 🔥 FIX: Ensure smooth scrolling without repetition
-            const newData = [...prevData.slice(1), extendedPoints[newIndex]];
-            return newData;
-          });
-          return newIndex;
-        });
-      }, 50); // Fixed fast animation speed
-      
-      return () => clearInterval(interval);
-    } else {
-      // Original logic for when we have enough points
-      setData(points.slice(0, 100));
-      const speedMultiplier = speedMultipliers[mode] || 1;
-      const updateInterval = (60000 / rate / baseComplex.length) * speedMultiplier;
+      drawECG();
+      animationRef.current = requestAnimationFrame(animate);
+    };
 
-      const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => {
-          const newIndex = (prevIndex + 1) % points.length;
-          setData((prevData) => {
-            const newData = [...prevData.slice(1), points[newIndex]];
-            return newData;
-          });
-          return newIndex;
-        });
-      }, updateInterval);
+    // Start animation
+    animate();
 
-      return () => clearInterval(interval);
-    }
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [points, rate, mode]);
 
+  // Handle canvas resize
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        drawECG();
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="w-full h-64 overflow-hidden bg-black relative rounded-lg">
-      <div className="absolute inset-0 z-0">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            {/* Small 1mm grid */}
-            <pattern
-              id="smallGrid"
-              width="4"
-              height="4"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 4 0 L 0 0 0 4"
-                fill="none"
-                stroke="#333"
-                strokeWidth="0.5"
-              />
-            </pattern>
-
-            {/* Large 5mm grid */}
-            <pattern
-              id="largeGrid"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="20" height="20" fill="url(#smallGrid)" />
-              <path
-                d="M 20 0 L 0 0 0 20"
-                fill="none"
-                stroke="#666"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-
-          <rect width="100%" height="100%" fill="url(#largeGrid)" />
-        </svg>
-      </div>
-
-      <div className="relative z-10 h-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-            <XAxis hide />
-            <YAxis hide domain={[-2, 2]} />
-            <Line
-              type="linear"
-              dataKey="y"
-              stroke="#00ff00"
-              strokeWidth={2}
-              dot={false}
-              connectNulls={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <canvas 
+        ref={canvasRef}
+        className="w-full h-full"
+        style={{ display: 'block' }}
+      />    
     </div>
   );
 };

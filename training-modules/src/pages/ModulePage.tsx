@@ -539,11 +539,11 @@ const ModulePage = () => {
     }
 
     // Override for safety margin steps - once we set safety margin, pace light should be on
-    const safetyMarginSteps = ["step5", "step12"]; // A safety (mod1&2), V safety (mod2)
-    if (safetyMarginSteps.some(step => completedSteps.has(step))) {
+    const safetyMarginSteps = ["step5", "step12"];
+    if (safetyMarginSteps.some(step => completedSteps.has(step)) && moduleId === "2") {
       leftSensor = true;
       rightSensor = false;
-    }
+    } 
 
     console.log("🚨 Sensor states calculated:", {
       moduleId,
@@ -825,9 +825,9 @@ const ModulePage = () => {
       return;
     }
 
-    console.log("🔄 Restoring full session state for:", currentSession.id);
+    console.log("🔄 Restoring session state for:", currentSession.id);
 
-    // Restore quiz state
+    // ONLY restore quiz state - do NOT restore parameters that could mess up ECG
     if (currentSession.quizState.isCompleted && !quizCompleted) {
       console.log("📝 Restoring completed quiz state");
       setQuizCompleted(true);
@@ -841,24 +841,9 @@ const ModulePage = () => {
       });
     }
 
-    // 🔥 NEW: Restore parameter values from session if they exist
-    if (currentSession.practiceState?.currentParameters) {
-      const savedParams = currentSession.practiceState.currentParameters;
-      console.log("📊 Restoring saved parameters:", savedParams);
-      
-      // Create a merged parameter object with module defaults as fallback
-      const restoredParams = {
-        ...currentModule.initialParams, // Start with module defaults
-        ...savedParams, // Override with saved values
-      };
-      
-      console.log("🎯 Setting restored params:", restoredParams);
-      setPacemakerParams(restoredParams);
-    } else {
-      console.log("📊 No saved parameters found, keeping module initial params");
-    }
-
-  }, [currentSession?.id, isPageReady, quizCompleted, currentModule.initialParams]);
+    // REMOVED: Parameter restoration logic - let ECG always use module initial params
+    console.log("📊 Keeping ECG params at module initial values for consistency");
+  }, [currentSession?.id, isPageReady, quizCompleted]);
 
   useEffect(() => {
     console.log("🔄 Module changed to:", moduleId);

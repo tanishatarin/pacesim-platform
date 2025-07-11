@@ -275,7 +275,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         id: "td_step3",
         objective: "Set A Sensitivity to find the sensing threshold",
         instruction:
-          "Set A Sensitivity to 4.0mA",
+          "Set A Sensitivity  to 0.4, then move value up until sensing threshold is found (4.0mA)",
         targetValues: { aSensitivity: 4 },
         allowedControls: ["aSensitivity"],
         completionCriteria: defaultCompletionCriteria,
