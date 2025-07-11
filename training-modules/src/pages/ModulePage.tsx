@@ -1195,7 +1195,7 @@ const ModulePage = () => {
                   )}
                   {steps.length > 0 && stepControllerInitialized && (
                     <span className="ml-3 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      Step {currentStepIndex + 1}/{steps.length} •{" "}
+                      On Step {currentStepIndex + 1}/{steps.length} •{" "}
                       {getProgressPercentage()}% Complete
                     </span>
                   )}
