@@ -815,7 +815,7 @@ const ModulePage = () => {
     currentModule?.initialParams,
   ]);
 
-  // SIMPLIFIED SESSION RESTORE - Only restore quiz state, NOT parameters that affect ECG
+  // restore session state effect
   useEffect(() => {
     if (!currentSession?.id || !isPageReady) {
       console.log("⏳ Waiting for session and page ready:", {
@@ -825,9 +825,9 @@ const ModulePage = () => {
       return;
     }
 
-    console.log("🔄 Restoring session state for:", currentSession.id);
+    console.log("🔄 Restoring full session state for:", currentSession.id);
 
-    // ONLY restore quiz state - do NOT restore parameters that could mess up ECG
+    // Restore quiz state
     if (currentSession.quizState.isCompleted && !quizCompleted) {
       console.log("📝 Restoring completed quiz state");
       setQuizCompleted(true);
@@ -841,9 +841,37 @@ const ModulePage = () => {
       });
     }
 
-    // REMOVED: Parameter restoration logic - let ECG always use module initial params
-    console.log("📊 Keeping ECG params at module initial values for consistency");
-  }, [currentSession?.id, isPageReady, quizCompleted]);
+    // 🔥 NEW: Restore parameter values from session if they exist
+    if (currentSession.practiceState?.currentParameters) {
+      const savedParams = currentSession.practiceState.currentParameters;
+      console.log("📊 Restoring saved parameters:", savedParams);
+      
+      // Create a merged parameter object with module defaults as fallback
+      const restoredParams = {
+        ...currentModule.initialParams, // Start with module defaults
+        ...savedParams, // Override with saved values
+      };
+      
+      console.log("🎯 Setting restored params:", restoredParams);
+      setPacemakerParams(restoredParams);
+    } else {
+      console.log("📊 No saved parameters found, keeping module initial params");
+    }
+
+  }, [currentSession?.id, isPageReady, quizCompleted, currentModule.initialParams]);
+
+  useEffect(() => {
+    console.log("🔄 Module changed to:", moduleId);
+    
+    // Only reset if there's no current session to restore from
+    if (!currentSession?.id) {
+      console.log("📊 No active session - setting initial params:", currentModule.initialParams);
+      setPacemakerParams(currentModule.initialParams);
+    } else {
+      console.log("📋 Active session exists - will restore from session data");
+    }
+  }, [moduleId, currentModule.initialParams, currentSession?.id]);
+
 
   // Sensor state logic (unchanged)
   useEffect(() => {
