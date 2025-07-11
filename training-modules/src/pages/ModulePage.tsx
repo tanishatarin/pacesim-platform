@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -484,7 +484,6 @@ const ModulePage = () => {
     completedSteps,
     allStepsCompleted,
     getProgressPercentage,
-    getFlashingSensor,
     handleStepComplete,
     isInitialized: stepControllerInitialized,
   } = useStepController(stepControllerProps);
@@ -858,6 +857,59 @@ const ModulePage = () => {
   }, [moduleId, currentModule.initialParams, currentSession?.id]);
 
 
+
+// Add this state before your useEffect hooks (e.g., after other useState declarations)
+const [autoCompletingModule, setAutoCompletingModule] = useState(false);
+
+// Replace your useEffect with this corrected version:
+
+useEffect(() => {
+  // Only proceed if we have all the required conditions for auto-completion
+  if (
+    quizCompleted && 
+    stepControllerInitialized && 
+    steps.length > 0 && 
+    allStepsCompleted && 
+    currentSession?.id && 
+    !showCompletion // Prevent multiple triggers
+  ) {
+    console.log("🎉 All steps completed for session! Auto-completing module...", {
+      sessionId: currentSession.id.slice(-8),
+      totalSteps: steps.length,
+      completedSteps: completedSteps.size,
+      quizCompleted,
+      stepControllerInitialized,
+      allStepsCompleted
+    });
+
+    // Add visual feedback that auto-completion is happening
+    setAutoCompletingModule(true);
+    
+    const timer = setTimeout(() => {
+      handleComplete(true);
+      setAutoCompletingModule(false);
+    }, 1500); // 1.5 second delay to let user see they completed the last step
+
+    return () => {
+      clearTimeout(timer);
+      setAutoCompletingModule(false);
+    };
+  }
+
+  // If conditions aren't met, do nothing (no timer cleanup needed)
+}, [
+  quizCompleted,
+  stepControllerInitialized, 
+  steps.length,
+  allStepsCompleted,
+  currentSession?.id,
+  showCompletion,
+  completedSteps.size,
+  handleComplete
+]);
+
+
+
   // Sensor state logic (unchanged)
   useEffect(() => {
     if (!currentModule) return;
@@ -962,8 +1014,6 @@ const ModulePage = () => {
       );
     }
   };
-
-
 
   // Quiz completion effect (unchanged)
   useEffect(() => {
@@ -1327,32 +1377,6 @@ const ModulePage = () => {
               </div>
             )}
 
-            {/* <div className="bg-[#F0F6FE] rounded-xl p-4">
-              <h3 className="mb-4 font-bold">Sensing Status</h3>
-              <div className="flex justify-around">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-16 h-16 rounded-full transition-all duration-300 ${
-                      sensorStates.left
-                        ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50"
-                        : "bg-gray-300"
-                    }`}
-                  />
-                  <span className="mt-2 text-sm text-gray-600">Pace</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-16 h-16 rounded-full transition-all duration-300 ${
-                      sensorStates.right
-                        ? "bg-blue-400 animate-pulse shadow-lg shadow-blue-400/50"
-                        : "bg-gray-300"
-                    }`}
-                  />
-                  <span className="mt-2 text-sm text-gray-600">Sense</span>
-                </div>
-              </div>
-            </div> */}
-
             {renderSensorLights()}   {/* replaces the sensing logic   */}
 
             <div className="bg-[#F0F6FE] rounded-xl p-4">
@@ -1401,24 +1425,6 @@ const ModulePage = () => {
                   className="w-full py-3 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
                 >
                   End Session
-                </button>
-                <button
-                  onClick={() => handleComplete(true)}
-                  disabled={
-                    steps.length > 0 &&
-                    (!allStepsCompleted || !stepControllerInitialized)
-                  }
-                  className={`w-full py-3 rounded-lg transition-colors ${
-                    steps.length > 0 &&
-                    (!allStepsCompleted || !stepControllerInitialized)
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-green-600 text-white hover:bg-green-700"
-                  }`}
-                >
-                  {steps.length > 0 &&
-                  (!allStepsCompleted || !stepControllerInitialized)
-                    ? `Complete All Steps (${completedSteps.size}/${steps.length})`
-                    : "Complete Module"}
                 </button>
               </div>
             )}
