@@ -178,7 +178,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         id: "step7",
         objective: "Find capture threshold",
         instruction:
-          "Slowly increase atrial output until you achieve consistent capture",
+          "Slowly increase atrial output until you achieve consistent capture (4mA)",
         targetValues: { aOutput: 4 },
         allowedControls: ["aOutput"],
         flashingSensor: "left",
@@ -516,7 +516,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         completionCriteria: defaultCompletionCriteria,
         hint: "Ensures non-pacing because set rate is below patient's intrinsic rate",
         patientVitals: {
-          intrinsicHeartRate: 30,
+          intrinsicHeartRate: 40,
           bloodPressure: "85/50",
         },
       },
@@ -530,7 +530,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         completionCriteria: defaultCompletionCriteria,
         hint: "Capture is not likely because output is at minimum",
         patientVitals: {
-          intrinsicHeartRate: 30,
+          intrinsicHeartRate: 40,
           bloodPressure: "85/50",
         },
       },
@@ -544,7 +544,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         completionCriteria: defaultCompletionCriteria,
         hint: "Start with highest sensitivity for V wires",
         patientVitals: {
-          intrinsicHeartRate: 30,
+          intrinsicHeartRate: 40,
           bloodPressure: "85/50",
         },
       },
@@ -558,7 +558,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         completionCriteria: defaultCompletionCriteria,
         hint: "Sensing threshold occurs at 2.0mV in this scenario",
         patientVitals: {
-          intrinsicHeartRate: 30,
+          intrinsicHeartRate: 40,
           bloodPressure: "85/50",
         },
       },
@@ -572,7 +572,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         completionCriteria: defaultCompletionCriteria,
         hint: "Half threshold provides safety margin",
         patientVitals: {
-          intrinsicHeartRate: 30,
+          intrinsicHeartRate: 40,
           bloodPressure: "85/50",
         },
       },
@@ -586,7 +586,7 @@ export const moduleConfigs: Record<string, ModuleConfig> = {
         completionCriteria: defaultCompletionCriteria,
         hint: "10 BPM above patient's intrinsic escape rate",
         patientVitals: {
-          intrinsicHeartRate: 30,
+          intrinsicHeartRate: 40,
           bloodPressure: "90/55",
         },
       },

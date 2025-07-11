@@ -123,7 +123,7 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
       "Scenario: POD 3 MVR patient feeling 'funny'. HR is 30, BP is 85/50 MAP (62). You have 2V and 2A wire.",
     mode: "third_degree_block",
     initialParams: {
-      rate: 30,
+      rate: 50,
       aOutput: 1,
       vOutput: 1,
       aSensitivity: 1,
@@ -145,7 +145,7 @@ const simpleModuleConfigs: Record<string, SimpleModuleConfig> = {
       + "Scenario: POD 3 AVR patient has a HR of 74 and BP is 110/74 (86). Patient has a history of hypertension and a bicuspid aortic valve. Later, after amiodarone and metoprolol, HR dropped to 38. Patient still in [redacted condition]. You have 1V wire and 1 skin wire",
     mode: "atrial_fibrillation",
     initialParams: {
-      rate: 30,
+      rate: 50,
       aOutput: 5,
       vOutput: 1,
       aSensitivity: 2,
